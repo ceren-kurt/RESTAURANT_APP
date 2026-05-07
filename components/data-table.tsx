@@ -127,18 +127,20 @@ export function StatusBadge({ status, label }: { status: string; label?: string 
   )
 }
 
-export function ActiveBadge({ isActive }: { isActive: boolean }) {
+export function ActiveBadge({ isActive }: { isActive: boolean | number }) {
+  const active = Boolean(isActive)
   return (
-    <Badge variant={isActive ? 'default' : 'destructive'}>
-      {isActive ? 'Aktif' : 'Pasif'}
+    <Badge variant={active ? 'default' : 'destructive'}>
+      {active ? 'Aktif' : 'Pasif'}
     </Badge>
   )
 }
 
-export function AvailableBadge({ isAvailable }: { isAvailable: boolean }) {
+export function AvailableBadge({ isAvailable }: { isAvailable: boolean | number }) {
+  const available = Boolean(isAvailable)
   return (
-    <Badge variant={isAvailable ? 'default' : 'secondary'}>
-      {isAvailable ? 'Müsait' : 'Mevcut Değil'}
+    <Badge variant={available ? 'default' : 'secondary'}>
+      {available ? 'Müsait' : 'Mevcut Değil'}
     </Badge>
   )
 }

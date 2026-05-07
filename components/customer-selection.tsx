@@ -96,12 +96,12 @@ export function CustomerSelection({ onSelectDineIn, onSelectOnline, onBack }: Cu
                 
                 {/* Title */}
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  Online Sipariş
+                  Gel-Al Sipariş
                 </h2>
                 
                 {/* Description */}
                 <p className="text-white/60 text-sm mb-5">
-                  Eve veya iş yerinize teslim
+                  Siparişini online ver, restorandan teslim al
                 </p>
                 
                 {/* Skewed Yellow Button */}
@@ -111,7 +111,7 @@ export function CustomerSelection({ onSelectDineIn, onSelectOnline, onBack }: Cu
                 >
                   <div className="relative transform -skew-x-6 bg-yellow-400 border-2 border-black px-6 py-3 shadow-lg transition-all duration-200 hover:bg-yellow-300 hover:scale-105">
                     <span className="block transform skew-x-6 text-black font-bold text-lg italic tracking-wide">
-                      Menüye Git
+                      Devam Et
                     </span>
                   </div>
                 </button>

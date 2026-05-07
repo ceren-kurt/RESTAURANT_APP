@@ -5,8 +5,7 @@ import {
   Category, Product, Employee, Courier, Table,
   CategoryCreate, ProductCreate, EmployeeCreate, CourierCreate, TableCreate 
 } from './types'
-
-const API_BASE = 'http://localhost:8000/api/v1/admin'
+import { supabase } from './supabase'
 
 interface AppContextType {
   categories: Category[]
@@ -37,12 +36,10 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
-async function handleResponse(response: Response) {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData.detail || `Hata: ${response.status}`)
+function throwSupabaseError(error: { message: string } | null, fallbackMessage: string) {
+  if (error) {
+    throw new Error(error.message || fallbackMessage)
   }
-  return response.json()
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -58,28 +55,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Fetch all data
   const fetchCategories = async () => {
-    const data = await handleResponse(await fetch(`${API_BASE}/categories`))
-    setCategories(data)
+    const { data, error } = await supabase.from('category').select('*')
+    throwSupabaseError(error, 'Kategoriler yüklenemedi')
+    setCategories((data ?? []) as Category[])
   }
 
   const fetchProducts = async () => {
-    const data = await handleResponse(await fetch(`${API_BASE}/products`))
-    setProducts(data)
+    const { data, error } = await supabase.from('product').select('*')
+    throwSupabaseError(error, 'Ürünler yüklenemedi')
+    setProducts((data ?? []) as Product[])
   }
 
   const fetchEmployees = async () => {
-    const data = await handleResponse(await fetch(`${API_BASE}/employees`))
-    setEmployees(data)
+    const { data, error } = await supabase.from('employee').select('*')
+    throwSupabaseError(error, 'Çalışanlar yüklenemedi')
+    setEmployees((data ?? []) as Employee[])
   }
 
   const fetchCouriers = async () => {
-    const data = await handleResponse(await fetch(`${API_BASE}/couriers`))
-    setCouriers(data)
+    const { data, error } = await supabase.from('courier').select('*')
+    throwSupabaseError(error, 'Kuryeler yüklenemedi')
+    setCouriers((data ?? []) as Courier[])
   }
 
   const fetchTables = async () => {
-    const data = await handleResponse(await fetch(`${API_BASE}/tables`))
-    setTables(data)
+    const { data, error } = await supabase.from('tables').select('*')
+    throwSupabaseError(error, 'Masalar yüklenemedi')
+    setTables((data ?? []) as Table[])
   }
 
   const refreshData = useCallback(async () => {
@@ -111,11 +113,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Category CRUD
   const addCategory = async (category: CategoryCreate) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/categories`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(category),
-      }))
+      const { error } = await supabase.from('category').insert(category)
+      throwSupabaseError(error, 'Kategori eklenemedi')
       await fetchCategories()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kategori eklenemedi')
@@ -125,11 +124,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateCategory = async (id: number, category: CategoryCreate) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/categories/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(category),
-      }))
+      const { error } = await supabase
+        .from('category')
+        .update(category)
+        .eq('category_id', id)
+      throwSupabaseError(error, 'Kategori güncellenemedi')
       await fetchCategories()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kategori güncellenemedi')
@@ -139,9 +138,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteCategory = async (id: number) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/categories/${id}`, {
-        method: 'DELETE',
-      }))
+      const { error } = await supabase.from('category').delete().eq('category_id', id)
+      throwSupabaseError(error, 'Kategori silinemedi')
       await fetchCategories()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kategori silinemedi')
@@ -152,11 +150,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Product CRUD
   const addProduct = async (product: ProductCreate) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(product),
-      }))
+      const { error } = await supabase.from('product').insert(product)
+      throwSupabaseError(error, 'Ürün eklenemedi')
       await fetchProducts()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ürün eklenemedi')
@@ -166,11 +161,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateProduct = async (id: number, product: ProductCreate) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(product),
-      }))
+      const { error } = await supabase
+        .from('product')
+        .update(product)
+        .eq('product_id', id)
+      throwSupabaseError(error, 'Ürün güncellenemedi')
       await fetchProducts()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ürün güncellenemedi')
@@ -180,9 +175,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteProduct = async (id: number) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/products/${id}`, {
-        method: 'DELETE',
-      }))
+      const { error } = await supabase.from('product').delete().eq('product_id', id)
+      throwSupabaseError(error, 'Ürün silinemedi')
       await fetchProducts()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ürün silinemedi')
@@ -193,11 +187,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Employee CRUD
   const addEmployee = async (employee: EmployeeCreate) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/employees`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(employee),
-      }))
+      const { error } = await supabase.from('employee').insert(employee)
+      throwSupabaseError(error, 'Çalışan eklenemedi')
       await fetchEmployees()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Çalışan eklenemedi')
@@ -207,11 +198,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateEmployee = async (id: number, employee: EmployeeCreate) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/employees/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(employee),
-      }))
+      const { error } = await supabase
+        .from('employee')
+        .update(employee)
+        .eq('employee_id', id)
+      throwSupabaseError(error, 'Çalışan güncellenemedi')
       await fetchEmployees()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Çalışan güncellenemedi')
@@ -221,9 +212,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteEmployee = async (id: number) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/employees/${id}`, {
-        method: 'DELETE',
-      }))
+      const { error } = await supabase.from('employee').delete().eq('employee_id', id)
+      throwSupabaseError(error, 'Çalışan silinemedi')
       await fetchEmployees()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Çalışan silinemedi')
@@ -234,11 +224,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Courier CRUD
   const addCourier = async (courier: CourierCreate) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/couriers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(courier),
-      }))
+      const { error } = await supabase.from('courier').insert(courier)
+      throwSupabaseError(error, 'Kurye eklenemedi')
       await fetchCouriers()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kurye eklenemedi')
@@ -248,11 +235,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateCourier = async (id: number, courier: CourierCreate) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/couriers/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(courier),
-      }))
+      const { error } = await supabase
+        .from('courier')
+        .update(courier)
+        .eq('courier_id', id)
+      throwSupabaseError(error, 'Kurye güncellenemedi')
       await fetchCouriers()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kurye güncellenemedi')
@@ -262,9 +249,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteCourier = async (id: number) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/couriers/${id}`, {
-        method: 'DELETE',
-      }))
+      const { error } = await supabase.from('courier').delete().eq('courier_id', id)
+      throwSupabaseError(error, 'Kurye silinemedi')
       await fetchCouriers()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kurye silinemedi')
@@ -275,11 +261,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Table CRUD
   const addTable = async (table: TableCreate) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/tables`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(table),
-      }))
+      const { error } = await supabase.from('tables').insert(table)
+      throwSupabaseError(error, 'Masa eklenemedi')
       await fetchTables()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Masa eklenemedi')
@@ -289,11 +272,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateTable = async (id: number, table: TableCreate) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/tables/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(table),
-      }))
+      const { error } = await supabase
+        .from('tables')
+        .update(table)
+        .eq('table_id', id)
+      throwSupabaseError(error, 'Masa güncellenemedi')
       await fetchTables()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Masa güncellenemedi')
@@ -303,9 +286,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const deleteTable = async (id: number) => {
     try {
-      await handleResponse(await fetch(`${API_BASE}/tables/${id}`, {
-        method: 'DELETE',
-      }))
+      const { error } = await supabase.from('tables').delete().eq('table_id', id)
+      throwSupabaseError(error, 'Masa silinemedi')
       await fetchTables()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Masa silinemedi')

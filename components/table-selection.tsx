@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Users, Loader2 } from 'lucide-react'
 import type { Table } from '@/lib/types'
-
-const API_BASE = 'http://localhost:8000/api/v1'
+import { supabase } from '@/lib/supabase'
 
 interface TableSelectionProps {
   onSelectTable: (table: Table) => void
@@ -19,12 +18,16 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
   useEffect(() => {
     const fetchTables = async () => {
       try {
-        const response = await fetch(`${API_BASE}/admin/tables`)
-        if (!response.ok) {
-          throw new Error('Masalar yüklenemedi')
+        const { data, error } = await supabase
+          .from('tables')
+          .select('*')
+          .order('table_number', { ascending: true })
+
+        if (error) {
+          throw new Error(error.message || 'Masalar yüklenemedi')
         }
-        const data = await response.json()
-        setTables(data)
+
+        setTables((data ?? []) as Table[])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Bir hata oluştu')
       } finally {
@@ -120,7 +123,7 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
           <div className="backdrop-blur-md bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">
             <p className="text-red-400 font-medium">{error}</p>
             <p className="text-white/60 text-sm mt-2">
-              Backend sunucusunun çalıştığından emin olun
+              Supabase bağlantı ayarlarını kontrol edin
             </p>
           </div>
         )}

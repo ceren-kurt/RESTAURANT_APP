@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Field, FieldGroup } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/spinner'
 import { ShieldCheck } from 'lucide-react'
-
-const API_BASE = 'http://localhost:8000/api/v1'
+import { supabase } from '@/lib/supabase'
 
 interface LoginDialogProps {
   open: boolean
@@ -29,30 +28,37 @@ export function LoginDialog({ open, onOpenChange, onLogin }: LoginDialogProps) {
     setIsLoading(true)
     
     try {
-      const response = await fetch(`${API_BASE}/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      })
+      const { data, error: adminError } = await supabase
+        .from('ADMIN_USER')
+        .select('*')
+        .eq('username', username)
+        .eq('password', password)
+        .single()
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.detail || 'Giriş başarısız')
+      if (adminError) {
+        console.error('Admin login query error:', {
+          message: adminError.message,
+          details: adminError.details,
+          hint: adminError.hint,
+          code: adminError.code,
+          fullError: adminError,
+        })
+        throw new Error(
+          `Giriş sorgusu başarısız: ${adminError.message}${adminError.code ? ` (code: ${adminError.code})` : ''}`
+        )
       }
 
-      const data = await response.json()
+      if (adminError || !data) {
+        throw new Error('Geçersiz kullanıcı adı veya şifre')
+      }
       
-      // admin_id'yi localStorage'a kaydet
-      localStorage.setItem('admin_id', data.admin_id.toString())
+      localStorage.setItem('admin_id', data.username)
       
       onLogin()
     } catch (err) {
+      console.error('Admin login failed:', err)
       if (err instanceof Error) {
-        if (err.message.includes('fetch')) {
-          setError('Sunucuya bağlanılamadı. Backend çalışıyor mu?')
-        } else {
-          setError(err.message)
-        }
+        setError(err.message)
       } else {
         setError('Geçersiz kullanıcı adı veya şifre')
       }

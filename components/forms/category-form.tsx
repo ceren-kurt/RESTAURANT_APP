@@ -18,8 +18,15 @@ interface CategoryFormProps {
   onSubmit: (data: CategoryCreate) => Promise<void>
 }
 
+interface CategoryFormState {
+  name: string
+  description?: string | null
+  image_url?: string | null
+  is_active: boolean
+}
+
 export function CategoryForm({ open, onOpenChange, category, onSubmit }: CategoryFormProps) {
-  const [formData, setFormData] = useState<CategoryCreate>({
+  const [formData, setFormData] = useState<CategoryFormState>({
     name: '',
     description: '',
     image_url: '',
@@ -34,7 +41,7 @@ export function CategoryForm({ open, onOpenChange, category, onSubmit }: Categor
         name: category.name,
         description: category.description || '',
         image_url: category.image_url || '',
-        is_active: category.is_active,
+        is_active: Boolean(category.is_active),
       })
     } else {
       setFormData({
@@ -53,7 +60,10 @@ export function CategoryForm({ open, onOpenChange, category, onSubmit }: Categor
     setError('')
     
     try {
-      await onSubmit(formData)
+      await onSubmit({
+        ...formData,
+        is_active: formData.is_active ? 1 : 0,
+      })
       onOpenChange(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Bir hata oluştu')

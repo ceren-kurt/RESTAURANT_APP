@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useApp } from '@/lib/app-context'
-import { ArrowLeft, ShoppingCart, Package, Armchair, Bike } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Package, Armchair, Bike, Plus, Minus, Trash2 } from 'lucide-react'
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from '@/components/ui/empty'
 import { Spinner } from '@/components/ui/spinner'
 import type { Table } from '@/lib/types'
+import { supabase } from '@/lib/supabase'
 
 interface CustomerViewProps {
   onBack: () => void
@@ -20,6 +22,9 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
   const { categories, products, loading, refreshData } = useApp()
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [cart, setCart] = useState<{ productId: number; quantity: number }[]>([])
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
 
   // Fetch data on mount for customer view
   useEffect(() => {
@@ -45,13 +50,103 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
     })
   }
 
+  const increaseQuantity = (productId: number) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.productId === productId ? { ...item, quantity: item.quantity + 1 } : item
+      )
+    )
+  }
+
+  const decreaseQuantity = (productId: number) => {
+    setCart((prev) =>
+      prev
+        .map((item) =>
+          item.productId === productId ? { ...item, quantity: item.quantity - 1 } : item
+        )
+        .filter((item) => item.quantity > 0)
+    )
+  }
+
+  const removeFromCart = (productId: number) => {
+    setCart((prev) => prev.filter((item) => item.productId !== productId))
+  }
+
   const getTotalItems = () => cart.reduce((sum, item) => sum + item.quantity, 0)
+
+  const getCartItems = () => {
+    return cart
+      .map((item) => {
+        const product = products.find((p) => p.product_id === item.productId)
+        if (!product) return null
+        return { ...item, product }
+      })
+      .filter((item): item is { productId: number; quantity: number; product: (typeof products)[number] } => item !== null)
+  }
   
   const getTotalPrice = () => {
     return cart.reduce((sum, item) => {
       const product = products.find(p => p.product_id === item.productId)
       return sum + (product?.price || 0) * item.quantity
     }, 0)
+  }
+
+  const completeOrder = async () => {
+    if (cart.length === 0) return
+
+    setOrderError(null)
+    setIsSubmittingOrder(true)
+
+    try {
+      const parsedCustomerId = Number(localStorage.getItem('customer_id'))
+      const customerId = Number.isFinite(parsedCustomerId) ? parsedCustomerId : null
+
+      if (orderType === 'online' && !customerId) {
+        throw new Error('Online sipariş için customer_id bulunamadı')
+      }
+
+      const totalAmount = getTotalPrice()
+      const orderTypeValue = orderType === 'online' ? 'takeaway' : orderType
+      const orderPayload = {
+        order_date: new Date().toISOString(),
+        total_amount: totalAmount,
+        status: 'pending',
+        order_type: orderTypeValue,
+        table_id: orderType === 'dine-in' ? selectedTable?.table_id ?? null : null,
+        customer_id: orderType === 'online' ? customerId : null,
+      }
+
+      const { data: orderData, error: orderErrorResponse } = await supabase
+        .from('orders')
+        .insert(orderPayload)
+        .select('order_id')
+        .single()
+
+      if (orderErrorResponse || !orderData) {
+        throw new Error(orderErrorResponse?.message || 'Sipariş kaydedilemedi')
+      }
+
+      const cartItems = getCartItems()
+      const detailRows = cartItems.map((item) => ({
+        product_id: item.product.product_id,
+        quantity: item.quantity,
+        unit_price: item.product.price,
+        order_id: orderData.order_id,
+      }))
+
+      const { error: detailError } = await supabase.from('order_detail').insert(detailRows)
+
+      if (detailError) {
+        throw new Error(detailError.message || 'Sipariş detayları kaydedilemedi')
+      }
+
+      setCart([])
+      setIsCartOpen(false)
+    } catch (err) {
+      setOrderError(err instanceof Error ? err.message : 'Sipariş tamamlanamadı')
+    } finally {
+      setIsSubmittingOrder(false)
+    }
   }
 
   if (loading) {
@@ -84,14 +179,14 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
                 ) : (
                   <Badge variant="secondary" className="text-xs flex items-center gap-1">
                     <Bike className="size-3" />
-                    Online Sipariş
+                    Gel-Al
                   </Badge>
                 )}
               </div>
             </div>
           </div>
           
-          <Button variant="outline" className="relative">
+          <Button variant="outline" className="relative" onClick={() => setIsCartOpen(true)}>
             <ShoppingCart className="size-5 mr-2" />
             Sepet
             {getTotalItems() > 0 && (
@@ -102,6 +197,86 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
           </Button>
         </div>
       </header>
+
+      <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Sepet</SheetTitle>
+            <SheetDescription>Eklediğiniz ürünleri buradan kontrol edebilirsiniz.</SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            {orderError && (
+              <p className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {orderError}
+              </p>
+            )}
+            {getCartItems().length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sepetiniz şu anda boş.</p>
+            ) : (
+              <div className="space-y-3">
+                {getCartItems().map((item) => (
+                  <div key={item.productId} className="rounded-lg border p-3">
+                    <div>
+                      <p className="font-medium">{item.product.name}</p>
+                      <p className="text-sm text-muted-foreground">Birim: ₺{item.product.price.toFixed(2)}</p>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="size-8"
+                          onClick={() => decreaseQuantity(item.productId)}
+                        >
+                          <Minus className="size-4" />
+                        </Button>
+                        <span className="min-w-6 text-center text-sm font-medium">{item.quantity}</span>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="size-8"
+                          onClick={() => increaseQuantity(item.productId)}
+                        >
+                          <Plus className="size-4" />
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold">₺{(item.product.price * item.quantity).toFixed(2)}</p>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-destructive hover:text-destructive"
+                          onClick={() => removeFromCart(item.productId)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <SheetFooter className="border-t">
+            <div className="w-full">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Toplam</span>
+                <span className="text-lg font-bold">₺{getTotalPrice().toFixed(2)}</span>
+              </div>
+              <Button
+                className="w-full"
+                disabled={getTotalItems() === 0 || isSubmittingOrder}
+                onClick={completeOrder}
+              >
+                {isSubmittingOrder ? 'Kaydediliyor...' : 'Siparişi Tamamla'}
+              </Button>
+            </div>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       <main className="container mx-auto px-4 py-6">
         {/* Categories */}
@@ -178,18 +353,6 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
           )}
         </div>
 
-        {/* Cart Summary */}
-        {cart.length > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4">
-            <div className="container mx-auto flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{getTotalItems()} ürün</p>
-                <p className="text-lg font-bold">₺{getTotalPrice().toFixed(2)}</p>
-              </div>
-              <Button>Siparişi Tamamla</Button>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   )

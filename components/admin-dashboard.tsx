@@ -10,7 +10,7 @@ import { EmployeeForm } from '@/components/forms/employee-form'
 import { CourierForm } from '@/components/forms/courier-form'
 import { TableForm } from '@/components/forms/table-form'
 import { useApp } from '@/lib/app-context'
-import { EntityType, Category, Product, Employee, Courier, Table } from '@/lib/types'
+import { EntityType, Category, Product, Employee, Courier, Table, Order, OrderDetail } from '@/lib/types'
 import { Separator } from '@/components/ui/separator'
 import { Spinner } from '@/components/ui/spinner'
 import {
@@ -30,6 +30,8 @@ import {
 } from '@/components/ui/alert'
 import { AlertCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { supabase } from '@/lib/supabase'
 
 interface AdminDashboardProps {
   onLogout: () => void
@@ -42,6 +44,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [itemToDelete, setItemToDelete] = useState<number | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [editingItem, setEditingItem] = useState<Category | Product | Employee | Courier | Table | null>(null)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [orderDetails, setOrderDetails] = useState<OrderDetail[]>([])
+  const [orderProducts, setOrderProducts] = useState<Record<number, Product>>({})
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null)
   
   const {
     categories,
@@ -74,6 +81,68 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   useEffect(() => {
     refreshData()
   }, [refreshData])
+
+  const fetchOrders = async () => {
+    setOrdersLoading(true)
+    try {
+      const { data: orderRows, error: orderError } = await supabase
+        .from('orders')
+        .select('*')
+        .order('order_date', { ascending: false })
+
+      if (orderError) throw new Error(orderError.message)
+
+      const normalizedOrders = (orderRows ?? []) as Order[]
+      setOrders(normalizedOrders)
+
+      const orderIds = normalizedOrders.map((order) => order.order_id)
+      if (orderIds.length === 0) {
+        setOrderDetails([])
+        setOrderProducts({})
+        return
+      }
+
+      const { data: detailRows, error: detailError } = await supabase
+        .from('order_detail')
+        .select('*')
+        .in('order_id', orderIds)
+
+      if (detailError) throw new Error(detailError.message)
+
+      const normalizedDetails = (detailRows ?? []) as OrderDetail[]
+      setOrderDetails(normalizedDetails)
+
+      const productIds = [...new Set(normalizedDetails.map((detail) => detail.product_id))]
+      if (productIds.length === 0) {
+        setOrderProducts({})
+        return
+      }
+
+      const { data: productRows, error: productError } = await supabase
+        .from('product')
+        .select('*')
+        .in('product_id', productIds)
+
+      if (productError) throw new Error(productError.message)
+
+      const productMap = ((productRows ?? []) as Product[]).reduce<Record<number, Product>>((acc, product) => {
+        acc[product.product_id] = product
+        return acc
+      }, {})
+
+      setOrderProducts(productMap)
+    } catch (err) {
+      console.error('Siparişler yüklenemedi:', err)
+    } finally {
+      setOrdersLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeSection === 'orders') {
+      fetchOrders()
+    }
+  }, [activeSection])
 
   const handleAdd = () => {
     setEditingItem(null)
@@ -111,6 +180,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         case 'tables':
           await deleteTable(itemToDelete)
           break
+        case 'orders':
+          break
       }
       setDeleteDialogOpen(false)
       setItemToDelete(null)
@@ -134,6 +205,46 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       'Reserved': 'Rezerve',
     }
     return labels[status] || status
+  }
+
+  const getOrderStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      pending: 'Beklemede',
+      preparing: 'Hazırlanıyor',
+      delivered: 'Tamamlandı',
+    }
+    return labels[status] || status
+  }
+
+  const updateOrderStatus = async (orderId: number, status: 'pending' | 'preparing' | 'delivered') => {
+    setUpdatingOrderId(orderId)
+    try {
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ status })
+        .eq('order_id', orderId)
+
+      if (updateError) {
+        console.error('Order status update error:', {
+          orderId,
+          status,
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint,
+          code: updateError.code,
+          fullError: updateError,
+        })
+        return
+      }
+
+      setOrders((prev) =>
+        prev.map((order) => (order.order_id === orderId ? { ...order, status } : order))
+      )
+    } catch (err) {
+      console.error('Sipariş durumu güncellenemedi:', err)
+    } finally {
+      setUpdatingOrderId(null)
+    }
   }
 
   const renderContent = () => {
@@ -309,6 +420,99 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               }}
             />
           </>
+        )
+
+      case 'orders':
+        if (ordersLoading) {
+          return (
+            <div className="flex items-center justify-center h-64">
+              <Spinner className="size-8" />
+              <span className="ml-2 text-muted-foreground">Siparişler yükleniyor...</span>
+            </div>
+          )
+        }
+
+        if (orders.length === 0) {
+          return (
+            <div className="text-sm text-muted-foreground">
+              Henüz sipariş bulunmuyor.
+            </div>
+          )
+        }
+
+        return (
+          <div className="space-y-4">
+            {orders.map((order) => {
+              const details = orderDetails.filter((detail) => detail.order_id === order.order_id)
+              return (
+                <Card key={order.order_id}>
+                  <CardHeader>
+                    <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+                      <span>Sipariş #{order.order_id}</span>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {new Date(order.order_date).toLocaleString('tr-TR')}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex flex-wrap gap-2 text-sm">
+                      <span className="rounded-md bg-muted px-2 py-1">
+                        {order.order_type === 'dine-in'
+                          ? `Masa ${order.table_id ?? '-'}`
+                          : `Paket (Müşteri: ${order.customer_id ?? '-'})`}
+                      </span>
+                      <span className="rounded-md bg-muted px-2 py-1">Durum: {getOrderStatusLabel(order.status)}</span>
+                      <span className="rounded-md bg-muted px-2 py-1">
+                        Toplam: ₺{Number(order.total_amount).toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 rounded-md border p-3">
+                      {details.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Sipariş detayı bulunamadı.</p>
+                      ) : (
+                        details.map((detail) => (
+                          <div key={detail.detail_id} className="flex items-center justify-between text-sm">
+                            <span>
+                              {orderProducts[detail.product_id]?.name ?? `Ürün #${detail.product_id}`} x {detail.quantity}
+                            </span>
+                            <span>₺{(Number(detail.unit_price) * detail.quantity).toFixed(2)}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant={order.status === 'pending' ? 'default' : 'outline'}
+                        disabled={updatingOrderId === order.order_id}
+                        onClick={() => updateOrderStatus(order.order_id, 'pending')}
+                      >
+                        Beklemede
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={order.status === 'preparing' ? 'default' : 'outline'}
+                        disabled={updatingOrderId === order.order_id}
+                        onClick={() => updateOrderStatus(order.order_id, 'preparing')}
+                      >
+                        Hazırlanıyor
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={order.status === 'delivered' ? 'default' : 'outline'}
+                        disabled={updatingOrderId === order.order_id}
+                        onClick={() => updateOrderStatus(order.order_id, 'delivered')}
+                      >
+                        Tamamlandı
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
         )
     }
   }

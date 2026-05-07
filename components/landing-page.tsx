@@ -1,9 +1,9 @@
 'use client'
 
-import { Crown, ConciergeBell, BookOpen } from 'lucide-react'
+import { Crown, ConciergeBell, BookOpen, UserCheck } from 'lucide-react'
 
 interface LandingPageProps {
-  onSelectRole: (role: 'admin' | 'customer') => void
+  onSelectRole: (role: 'admin' | 'customer' | 'waiter') => void
 }
 
 export function LandingPage({ onSelectRole }: LandingPageProps) {
@@ -31,7 +31,7 @@ export function LandingPage({ onSelectRole }: LandingPageProps) {
         </div>
         
         {/* Glassmorphism Cards */}
-        <div className="flex flex-col sm:flex-row gap-6 w-full max-w-2xl">
+        <div className="grid w-full max-w-4xl grid-cols-1 gap-6 md:grid-cols-3">
           {/* Admin Card */}
           <div className="flex-1">
             <div className="relative p-6 rounded-2xl backdrop-blur-md bg-zinc-800/70 border border-zinc-700/50 shadow-2xl">
@@ -113,6 +113,28 @@ export function LandingPage({ onSelectRole }: LandingPageProps) {
                     <span className="block transform skew-x-6 text-black font-bold text-lg italic tracking-wide">
                       Menüye Git
                     </span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Waiter Card */}
+          <div className="flex-1">
+            <div className="relative p-6 rounded-2xl backdrop-blur-md bg-zinc-800/70 border border-zinc-700/50 shadow-2xl">
+              <div className="flex flex-col items-center text-center">
+                <div className="relative mb-4">
+                  <div className="absolute -inset-2 bg-gradient-to-t from-blue-600 via-cyan-500 to-sky-400 rounded-full blur-md opacity-60" />
+                  <UserCheck className="relative size-14 text-cyan-300 drop-shadow-lg" />
+                </div>
+
+                <h2 className="text-2xl font-bold text-white mb-2">Garson</h2>
+
+                <p className="text-white/60 text-sm mb-5">Masa siparişlerini yönet</p>
+
+                <button onClick={() => onSelectRole('waiter')} className="w-full relative group">
+                  <div className="relative transform -skew-x-6 bg-cyan-400 border-2 border-black px-6 py-3 shadow-lg transition-all duration-200 hover:bg-cyan-300 hover:scale-105">
+                    <span className="block transform skew-x-6 text-black font-bold text-lg italic tracking-wide">Giriş Yap</span>
                   </div>
                 </button>
               </div>

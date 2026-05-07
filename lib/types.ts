@@ -5,7 +5,7 @@ export interface Category {
   name: string
   description: string | null
   image_url?: string | null
-  is_active: boolean
+  is_active: boolean | number
 }
 
 export interface Product {
@@ -14,7 +14,7 @@ export interface Product {
   description?: string | null
   price: number
   image_url?: string | null
-  is_available: boolean
+  is_available: boolean | number
   category_id: number
   category_name?: string
 }
@@ -42,14 +42,32 @@ export interface Table {
   status: string
 }
 
-export type EntityType = 'categories' | 'products' | 'employees' | 'couriers' | 'tables'
+export interface Order {
+  order_id: number
+  order_date: string
+  total_amount: number
+  status: string
+  order_type: string
+  table_id: number | null
+  customer_id: number | null
+}
+
+export interface OrderDetail {
+  detail_id: number
+  quantity: number
+  unit_price: number
+  order_id: number
+  product_id: number
+}
+
+export type EntityType = 'categories' | 'products' | 'employees' | 'couriers' | 'tables' | 'orders'
 
 // Form veri tipleri (POST/PUT istekleri için)
 export interface CategoryCreate {
   name: string
   description?: string | null
   image_url?: string | null
-  is_active: boolean
+  is_active: number
 }
 
 export interface ProductCreate {
@@ -57,7 +75,7 @@ export interface ProductCreate {
   description?: string | null
   price: number
   image_url?: string | null
-  is_available: boolean
+  is_available: number
   category_id: number
 }
 

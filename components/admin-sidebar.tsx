@@ -12,7 +12,7 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent
 } from '@/components/ui/sidebar'
-import { LayoutGrid, Package, Users, Truck, TableIcon, LogOut, UtensilsCrossed } from 'lucide-react'
+import { LayoutGrid, Package, Users, Truck, TableIcon, LogOut, UtensilsCrossed, ClipboardList } from 'lucide-react'
 import { EntityType } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 
@@ -28,6 +28,7 @@ const menuItems: { id: EntityType; label: string; icon: React.ComponentType<{ cl
   { id: 'employees', label: 'Çalışanlar', icon: Users },
   { id: 'couriers', label: 'Kuryeler', icon: Truck },
   { id: 'tables', label: 'Masalar', icon: TableIcon },
+  { id: 'orders', label: 'Siparişler', icon: ClipboardList },
 ]
 
 export function AdminSidebar({ activeSection, onSectionChange, onLogout }: AdminSidebarProps) {

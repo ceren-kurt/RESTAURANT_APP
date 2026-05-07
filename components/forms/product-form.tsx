@@ -20,8 +20,17 @@ interface ProductFormProps {
   onSubmit: (data: ProductCreate) => Promise<void>
 }
 
+interface ProductFormState {
+  name: string
+  description?: string | null
+  price: number
+  image_url?: string | null
+  is_available: boolean
+  category_id: number
+}
+
 export function ProductForm({ open, onOpenChange, product, categories, onSubmit }: ProductFormProps) {
-  const [formData, setFormData] = useState<ProductCreate>({
+  const [formData, setFormData] = useState<ProductFormState>({
     name: '',
     description: '',
     price: 0,
@@ -39,7 +48,7 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
         description: product.description || '',
         price: product.price,
         image_url: product.image_url || '',
-        is_available: product.is_available,
+        is_available: Boolean(product.is_available),
         category_id: product.category_id,
       })
     } else {
@@ -61,7 +70,10 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
     setError('')
     
     try {
-      await onSubmit(formData)
+      await onSubmit({
+        ...formData,
+        is_available: formData.is_available ? 1 : 0,
+      })
       onOpenChange(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Bir hata oluştu')
@@ -147,16 +159,18 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
               </Select>
             </Field>
             
-            <Field className="flex flex-row items-center justify-between">
-              <div>
-                <Label htmlFor="is_available">Müsait mi?</Label>
-                <p className="text-sm text-muted-foreground">Ürünü müsait/mevcut değil yapın</p>
+            <Field className="rounded-lg border bg-muted/30 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <Label htmlFor="is_available" className="text-sm font-medium">Müsait mi?</Label>
+                  <p className="text-xs text-muted-foreground">Ürünün satışta olup olmadığını belirler.</p>
+                </div>
+                <Switch
+                  id="is_available"
+                  checked={formData.is_available}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_available: checked })}
+                />
               </div>
-              <Switch
-                id="is_available"
-                checked={formData.is_available}
-                onCheckedChange={(checked) => setFormData({ ...formData, is_available: checked })}
-              />
             </Field>
           </FieldGroup>
           
