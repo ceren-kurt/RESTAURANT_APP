@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { 
   Sidebar, 
   SidebarContent, 
@@ -15,6 +16,8 @@ import {
 import { LayoutGrid, Package, Users, Truck, TableIcon, LogOut, UtensilsCrossed, ClipboardList } from 'lucide-react'
 import { EntityType } from '@/lib/types'
 import { Button } from '@/components/ui/button'
+import { supabase } from '@/lib/supabase'
+import { Spinner } from '@/components/ui/spinner'
 
 interface AdminSidebarProps {
   activeSection: EntityType
@@ -32,6 +35,60 @@ const menuItems: { id: EntityType; label: string; icon: React.ComponentType<{ cl
 ]
 
 export function AdminSidebar({ activeSection, onSectionChange, onLogout }: AdminSidebarProps) {
+  const [dailyRevenue, setDailyRevenue] = useState(0)
+  const [isRevenueLoading, setIsRevenueLoading] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchDailyRevenue = async () => {
+      try {
+        if (isMounted) {
+          setIsRevenueLoading(true)
+        }
+
+        const now = new Date()
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+
+        const { data, error } = await supabase
+          .from('orders')
+          .select('total_amount')
+          .eq('status', 'delivered')
+          .gte('order_date', startOfDay.toISOString())
+          .lt('order_date', endOfDay.toISOString())
+
+        if (error) {
+          console.error('Günlük kazanç sorgusu hatası:', error)
+          return
+        }
+
+        const total = (data ?? []).reduce((sum, row) => sum + Number(row.total_amount || 0), 0)
+        if (isMounted) {
+          setDailyRevenue(total)
+        }
+      } finally {
+        if (isMounted) {
+          setIsRevenueLoading(false)
+        }
+      }
+    }
+
+    fetchDailyRevenue()
+    const intervalId = setInterval(fetchDailyRevenue, 5 * 60 * 1000)
+
+    return () => {
+      isMounted = false
+      clearInterval(intervalId)
+    }
+  }, [])
+
+  const formattedRevenue = new Intl.NumberFormat('tr-TR', {
+    style: 'currency',
+    currency: 'TRY',
+    minimumFractionDigits: 2,
+  }).format(dailyRevenue)
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
@@ -66,6 +123,20 @@ export function AdminSidebar({ activeSection, onSectionChange, onLogout }: Admin
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <div className="mx-2 mt-2 rounded-xl border border-sidebar-border/80 bg-sidebar-accent/40 p-3 group-data-[collapsible=icon]:hidden">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Günlük Toplam Kazanç</p>
+          {isRevenueLoading ? (
+            <div className="mt-2 flex items-center gap-2">
+              <Spinner className="size-4" />
+              <span className="text-sm text-muted-foreground">Yükleniyor...</span>
+            </div>
+          ) : (
+            <p className="mt-2 text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+              Günlük Kazanç: {formattedRevenue}
+            </p>
+          )}
+        </div>
       </SidebarContent>
       
       <SidebarFooter className="border-t border-sidebar-border">
