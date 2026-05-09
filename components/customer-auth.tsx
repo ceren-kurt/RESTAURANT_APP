@@ -15,6 +15,7 @@ interface CustomerAuthProps {
 }
 
 export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPhone, setLoginPhone] = useState('')
   const [registerFirstName, setRegisterFirstName] = useState('')
@@ -38,17 +39,17 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
         .maybeSingle()
 
       if (queryError) {
-        throw new Error(queryError.message || 'Giriş sırasında bir hata oluştu')
+        throw new Error(queryError.message || 'An error occurred during login')
       }
 
       if (!data?.customer_id) {
-        throw new Error('E-posta veya telefon eşleşmedi')
+        throw new Error('Email or phone does not match')
       }
 
       localStorage.setItem('customer_id', data.customer_id.toString())
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Giriş başarısız')
+      setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
       setIsLoading(false)
     }
@@ -60,6 +61,38 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
     setIsLoading(true)
 
     try {
+      const [phoneCheck, emailCheck] = await Promise.all([
+        supabase
+          .from('customer')
+          .select('customer_id')
+          .eq('phone', registerPhone)
+          .limit(1),
+        supabase
+          .from('customer')
+          .select('customer_id')
+          .eq('email', registerEmail)
+          .limit(1),
+      ])
+
+      if (phoneCheck.error) {
+        throw new Error(phoneCheck.error.message || 'An error occurred during registration')
+      }
+
+      if (emailCheck.error) {
+        throw new Error(emailCheck.error.message || 'An error occurred during registration')
+      }
+
+      const existingCustomerId =
+        phoneCheck.data?.[0]?.customer_id ?? emailCheck.data?.[0]?.customer_id ?? null
+
+      if (existingCustomerId) {
+        setError('An account with this email or phone already exists. Please sign in.')
+        setActiveTab('login')
+        setLoginEmail(registerEmail)
+        setLoginPhone(registerPhone)
+        return
+      }
+
       const { data, error: insertError } = await supabase
         .from('customer')
         .insert({
@@ -72,17 +105,17 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
         .single()
 
       if (insertError) {
-        throw new Error(insertError.message || 'Kayıt sırasında bir hata oluştu')
+        throw new Error(insertError.message || 'An error occurred during registration')
       }
 
       if (!data?.customer_id) {
-        throw new Error('Müşteri kaydı oluşturulamadı')
+        throw new Error('Customer record could not be created')
       }
 
       localStorage.setItem('customer_id', data.customer_id.toString())
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kayıt başarısız')
+      setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {
       setIsLoading(false)
     }
@@ -101,7 +134,7 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
         className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white/70 hover:text-white transition-colors"
       >
         <ArrowLeft className="size-5" />
-        <span className="font-medium">Geri</span>
+        <span className="font-medium">Back</span>
       </button>
 
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-zinc-700/50 bg-zinc-900/80 p-6 backdrop-blur-md shadow-2xl">
@@ -109,31 +142,31 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
           <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-primary/20">
             <UserRound className="size-6 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Müşteri Girişi</h1>
-          <p className="mt-1 text-sm text-white/60">Online sipariş için giriş yapın veya kayıt olun</p>
+          <h1 className="text-2xl font-bold text-white">Customer Login</h1>
+          <p className="mt-1 text-sm text-white/60">Sign in or register for online ordering</p>
         </div>
 
-        <Tabs defaultValue="login" className="gap-4">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'login' | 'register')} className="gap-4">
           <TabsList className="w-full">
-            <TabsTrigger value="login">Giriş Yap</TabsTrigger>
-            <TabsTrigger value="register">Kayıt Ol</TabsTrigger>
+            <TabsTrigger value="login">Sign In</TabsTrigger>
+            <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="login-email" className="text-white">E-posta</Label>
+                <Label htmlFor="login-email" className="text-white">Email</Label>
                 <Input
                   id="login-email"
                   type="email"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="ornek@mail.com"
+                  placeholder="example@mail.com"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="login-phone" className="text-white">Telefon</Label>
+                <Label htmlFor="login-phone" className="text-white">Phone</Label>
                 <Input
                   id="login-phone"
                   value={loginPhone}
@@ -144,7 +177,7 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Spinner className="mr-2" />}
-                Giriş Yap
+                Sign In
               </Button>
             </form>
           </TabsContent>
@@ -153,7 +186,7 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="register-first-name" className="text-white">Ad</Label>
+                  <Label htmlFor="register-first-name" className="text-white">First Name</Label>
                   <Input
                     id="register-first-name"
                     value={registerFirstName}
@@ -162,7 +195,7 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="register-last-name" className="text-white">Soyad</Label>
+                  <Label htmlFor="register-last-name" className="text-white">Last Name</Label>
                   <Input
                     id="register-last-name"
                     value={registerLastName}
@@ -172,7 +205,7 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="register-phone" className="text-white">Telefon</Label>
+                <Label htmlFor="register-phone" className="text-white">Phone</Label>
                 <Input
                   id="register-phone"
                   value={registerPhone}
@@ -181,7 +214,7 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="register-email" className="text-white">E-posta</Label>
+                <Label htmlFor="register-email" className="text-white">Email</Label>
                 <Input
                   id="register-email"
                   type="email"
@@ -192,7 +225,7 @@ export function CustomerAuth({ onBack, onSuccess }: CustomerAuthProps) {
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading && <Spinner className="mr-2" />}
-                Kayıt Ol
+                Register
               </Button>
             </form>
           </TabsContent>

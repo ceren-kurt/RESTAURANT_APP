@@ -55,7 +55,7 @@ export function CourierForm({ open, onOpenChange, courier, onSubmit }: CourierFo
       await onSubmit(formData)
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Bir hata oluştu')
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsSubmitting(false)
     }
@@ -65,38 +65,38 @@ export function CourierForm({ open, onOpenChange, courier, onSubmit }: CourierFo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{courier ? 'Kurye Düzenle' : 'Yeni Kurye'}</DialogTitle>
+          <DialogTitle>{courier ? 'Edit Courier' : 'New Courier'}</DialogTitle>
           <DialogDescription>
-            {courier ? 'Kurye bilgilerini güncelleyin.' : 'Yeni bir kurye ekleyin.'}
+            {courier ? 'Update courier details.' : 'Add a new courier.'}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <Label htmlFor="first_name">Ad</Label>
+              <Label htmlFor="first_name">First Name</Label>
               <Input
                 id="first_name"
                 value={formData.first_name}
                 onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                placeholder="Kurye adı"
+                placeholder="Courier first name"
                 required
               />
             </Field>
             
             <Field>
-              <Label htmlFor="last_name">Soyad</Label>
+              <Label htmlFor="last_name">Last Name</Label>
               <Input
                 id="last_name"
                 value={formData.last_name}
                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                placeholder="Kurye soyadı"
+                placeholder="Courier last name"
                 required
               />
             </Field>
             
             <Field>
-              <Label htmlFor="vehicle_plate">Araç Plakası</Label>
+              <Label htmlFor="vehicle_plate">Vehicle Plate</Label>
               <Input
                 id="vehicle_plate"
                 value={formData.vehicle_plate}
@@ -107,18 +107,18 @@ export function CourierForm({ open, onOpenChange, courier, onSubmit }: CourierFo
             </Field>
             
             <Field>
-              <Label htmlFor="courier_status">Durum</Label>
+              <Label htmlFor="courier_status">Status</Label>
               <Select
                 value={formData.courier_status}
                 onValueChange={(value) => setFormData({ ...formData, courier_status: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Durum seçin" />
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Available">Müsait</SelectItem>
-                  <SelectItem value="Busy">Meşgul</SelectItem>
-                  <SelectItem value="Inactive">Pasif</SelectItem>
+                  <SelectItem value="Available">Available</SelectItem>
+                  <SelectItem value="Busy">Busy</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
@@ -130,11 +130,11 @@ export function CourierForm({ open, onOpenChange, courier, onSubmit }: CourierFo
           
           <DialogFooter className="mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-              İptal
+              Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Spinner className="mr-2" />}
-              {courier ? 'Güncelle' : 'Ekle'}
+              {courier ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </form>

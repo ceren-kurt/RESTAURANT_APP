@@ -42,7 +42,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
       setTables((tableRows ?? []) as Table[])
       setProducts((productRows ?? []) as Product[])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Veriler yüklenemedi')
+      setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setLoading(false)
     }
@@ -75,7 +75,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
       if (detailError) throw new Error(detailError.message)
       setOrderDetails((detailRows ?? []) as OrderDetail[])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Masa siparişleri yüklenemedi')
+      setError(err instanceof Error ? err.message : 'Table orders could not be loaded')
     }
   }
 
@@ -127,7 +127,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
     try {
       const employeeId = Number(localStorage.getItem('employee_id'))
       if (!Number.isFinite(employeeId)) {
-        throw new Error('employee_id bulunamadı, tekrar giriş yapın')
+        throw new Error('employee_id not found, please sign in again')
       }
 
       const { data: orderRow, error: orderError } = await supabase
@@ -143,7 +143,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
         .select('order_id')
         .single()
 
-      if (orderError || !orderRow) throw new Error(orderError?.message || 'Sipariş kaydedilemedi')
+      if (orderError || !orderRow) throw new Error(orderError?.message || 'Order could not be saved')
 
       const detailRows = cart.map((item) => {
         const product = products.find((p) => p.product_id === item.productId)
@@ -156,12 +156,12 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
       })
 
       const { error: detailError } = await supabase.from('order_detail').insert(detailRows)
-      if (detailError) throw new Error(detailError.message || 'Sipariş detayları kaydedilemedi')
+      if (detailError) throw new Error(detailError.message || 'Order details could not be saved')
 
       setCart([])
       await fetchTableOrders(selectedTable.table_id)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sipariş oluşturulamadı')
+      setError(err instanceof Error ? err.message : 'Order could not be created')
     } finally {
       setIsSubmittingOrder(false)
     }
@@ -177,20 +177,20 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
         order_id: order.order_id,
       })
 
-      if (paymentError) throw new Error(paymentError.message || 'Ödeme kaydı oluşturulamadı')
+      if (paymentError) throw new Error(paymentError.message || 'Payment record could not be created')
 
       const { error: updateError } = await supabase
         .from('orders')
         .update({ status: 'delivered' })
         .eq('order_id', order.order_id)
 
-      if (updateError) throw new Error(updateError.message || 'Sipariş durumu güncellenemedi')
+      if (updateError) throw new Error(updateError.message || 'Order status could not be updated')
 
       if (selectedTable) {
         await fetchTableOrders(selectedTable.table_id)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ödeme işlemi başarısız')
+      setError(err instanceof Error ? err.message : 'Payment failed')
     } finally {
       setIsPayingOrderId(null)
     }
@@ -200,7 +200,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner className="size-8" />
-        <span className="ml-2 text-muted-foreground">Garson ekranı yükleniyor...</span>
+        <span className="ml-2 text-muted-foreground">Loading waiter dashboard...</span>
       </div>
     )
   }
@@ -213,8 +213,8 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
             <ArrowLeft className="size-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold">Garson Paneli</h1>
-            <p className="text-xs text-muted-foreground">Masa ve sipariş yönetimi</p>
+            <h1 className="text-xl font-bold">Waiter Panel</h1>
+            <p className="text-xs text-muted-foreground">Table and order management</p>
           </div>
         </div>
       </header>
@@ -222,7 +222,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
       <main className="container mx-auto grid gap-4 px-4 py-4 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Masalar</CardTitle>
+            <CardTitle>Tables</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
             {tables.map((table) => (
@@ -232,7 +232,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
                 className="h-auto py-3"
                 onClick={() => setSelectedTable(table)}
               >
-                Masa {table.table_number}
+                Table {table.table_number}
               </Button>
             ))}
           </CardContent>
@@ -241,25 +241,25 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
         <div className="space-y-4 lg:col-span-2">
           {!selectedTable ? (
             <Card>
-              <CardContent className="py-8 text-sm text-muted-foreground">Detay görmek için bir masa seçin.</CardContent>
+              <CardContent className="py-8 text-sm text-muted-foreground">Select a table to view details.</CardContent>
             </Card>
           ) : (
             <>
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>Masa {selectedTable.table_number} Siparişleri</span>
-                    <Badge>Toplam: ₺{tableTotal.toFixed(2)}</Badge>
+                    <span>Table {selectedTable.table_number} Orders</span>
+                    <Badge>Total: ₺{tableTotal.toFixed(2)}</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {orders.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Bu masa için aktif sipariş yok.</p>
+                    <p className="text-sm text-muted-foreground">No active orders for this table.</p>
                   ) : (
                     orders.map((order) => (
                       <div key={order.order_id} className="rounded-lg border p-3">
                         <div className="mb-2 flex items-center justify-between">
-                          <span className="font-medium">Sipariş #{order.order_id}</span>
+                          <span className="font-medium">Order #{order.order_id}</span>
                           <Badge variant="secondary">₺{Number(order.total_amount).toFixed(2)}</Badge>
                         </div>
                         <div className="space-y-1 text-sm">
@@ -268,7 +268,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
                             .map((detail) => (
                               <div key={detail.detail_id} className="flex justify-between">
                                 <span>
-                                  {products.find((p) => p.product_id === detail.product_id)?.name ?? `Ürün #${detail.product_id}`} x{' '}
+                                  {products.find((p) => p.product_id === detail.product_id)?.name ?? `Product #${detail.product_id}`} x{' '}
                                   {detail.quantity}
                                 </span>
                                 <span>₺{(Number(detail.unit_price) * detail.quantity).toFixed(2)}</span>
@@ -282,7 +282,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
                           onClick={() => markOrderAsPaid(order)}
                         >
                           <CreditCard className="mr-2 size-4" />
-                          Ödendi
+                          Paid
                         </Button>
                       </div>
                     ))
@@ -292,7 +292,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Yeni Sipariş Ekle</CardTitle>
+                  <CardTitle>Add New Order</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -319,7 +319,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
                   </div>
 
                   <div className="flex items-center justify-between rounded-lg border p-3">
-                    <span className="font-medium">Yeni sipariş toplamı</span>
+                    <span className="font-medium">New order total</span>
                     <span className="font-bold">₺{cartTotal.toFixed(2)}</span>
                   </div>
 
@@ -327,12 +327,12 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
                     {isSubmittingOrder ? (
                       <>
                         <Spinner className="mr-2" />
-                        Kaydediliyor...
+                        Saving...
                       </>
                     ) : (
                       <>
                         <Receipt className="mr-2 size-4" />
-                        Siparişi Ekle
+                        Add Order
                       </>
                     )}
                   </Button>

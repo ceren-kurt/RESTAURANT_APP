@@ -26,7 +26,7 @@ export function CustomerSelection({ onSelectDineIn, onSelectOnline, onBack }: Cu
         className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white/70 hover:text-white transition-colors"
       >
         <ArrowLeft className="size-5" />
-        <span className="font-medium">Geri</span>
+        <span className="font-medium">Back</span>
       </button>
       
       {/* Content */}
@@ -34,10 +34,10 @@ export function CustomerSelection({ onSelectDineIn, onSelectOnline, onBack }: Cu
         {/* Title */}
         <div className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 tracking-tight">
-            Sipariş Türü
+            Order Type
           </h1>
           <p className="text-white/60 text-base md:text-lg">
-            Nasıl sipariş vermek istersiniz?
+            How would you like to order?
           </p>
         </div>
         
@@ -63,7 +63,7 @@ export function CustomerSelection({ onSelectDineIn, onSelectOnline, onBack }: Cu
                 
                 {/* Description */}
                 <p className="text-white/60 text-sm mb-5">
-                  Masanızı seçin ve sipariş verin
+                  Select your table and place your order
                 </p>
                 
                 {/* Skewed Red Button */}
@@ -73,7 +73,7 @@ export function CustomerSelection({ onSelectDineIn, onSelectOnline, onBack }: Cu
                 >
                   <div className="relative transform -skew-x-6 bg-red-600 border-2 border-black px-6 py-3 shadow-lg transition-all duration-200 hover:bg-red-500 hover:scale-105">
                     <span className="block transform skew-x-6 text-white font-bold text-lg italic tracking-wide">
-                      Masa Seç
+                      Select Table
                     </span>
                   </div>
                 </button>
@@ -96,12 +96,12 @@ export function CustomerSelection({ onSelectDineIn, onSelectOnline, onBack }: Cu
                 
                 {/* Title */}
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  Gel-Al Sipariş
+                  Takeaway Order
                 </h2>
                 
                 {/* Description */}
                 <p className="text-white/60 text-sm mb-5">
-                  Siparişini online ver, restorandan teslim al
+                  Order online and pick up at the restaurant
                 </p>
                 
                 {/* Skewed Yellow Button */}

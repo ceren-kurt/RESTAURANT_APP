@@ -52,7 +52,7 @@ export function TableForm({ open, onOpenChange, table, onSubmit }: TableFormProp
       await onSubmit(formData)
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Bir hata oluştu')
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsSubmitting(false)
     }
@@ -62,51 +62,51 @@ export function TableForm({ open, onOpenChange, table, onSubmit }: TableFormProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{table ? 'Masa Düzenle' : 'Yeni Masa'}</DialogTitle>
+          <DialogTitle>{table ? 'Edit Table' : 'New Table'}</DialogTitle>
           <DialogDescription>
-            {table ? 'Masa bilgilerini güncelleyin.' : 'Yeni bir masa ekleyin.'}
+            {table ? 'Update table details.' : 'Add a new table.'}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <Label htmlFor="table_number">Masa Numarası</Label>
+              <Label htmlFor="table_number">Table Number</Label>
               <Input
                 id="table_number"
                 value={formData.table_number}
                 onChange={(e) => setFormData({ ...formData, table_number: e.target.value })}
-                placeholder="Örn: M-01"
+                placeholder="E.g: M-01"
                 required
               />
             </Field>
             
             <Field>
-              <Label htmlFor="capacity">Kapasite</Label>
+              <Label htmlFor="capacity">Capacity</Label>
               <Input
                 id="capacity"
                 type="number"
                 min="1"
                 value={formData.capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 1 })}
-                placeholder="Kişi sayısı"
+                placeholder="Seat count"
                 required
               />
             </Field>
             
             <Field>
-              <Label htmlFor="status">Durum</Label>
+              <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.status}
                 onValueChange={(value) => setFormData({ ...formData, status: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Durum seçin" />
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Available">Müsait</SelectItem>
-                  <SelectItem value="Occupied">Dolu</SelectItem>
-                  <SelectItem value="Reserved">Rezerve</SelectItem>
+                  <SelectItem value="Available">Available</SelectItem>
+                  <SelectItem value="Occupied">Occupied</SelectItem>
+                  <SelectItem value="Reserved">Reserved</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
@@ -118,11 +118,11 @@ export function TableForm({ open, onOpenChange, table, onSubmit }: TableFormProp
           
           <DialogFooter className="mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-              İptal
+              Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Spinner className="mr-2" />}
-              {table ? 'Güncelle' : 'Ekle'}
+              {table ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </form>

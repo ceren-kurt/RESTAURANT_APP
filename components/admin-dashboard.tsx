@@ -132,7 +132,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
       setOrderProducts(productMap)
     } catch (err) {
-      console.error('Siparişler yüklenemedi:', err)
+      console.error('Failed to load orders:', err)
     } finally {
       setOrdersLoading(false)
     }
@@ -198,11 +198,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      'Available': 'Müsait',
-      'Busy': 'Meşgul',
-      'Inactive': 'Pasif',
-      'Occupied': 'Dolu',
-      'Reserved': 'Rezerve',
+      'Available': 'Available',
+      'Busy': 'Busy',
+      'Inactive': 'Inactive',
+      'Occupied': 'Occupied',
+      'Reserved': 'Reserved',
     }
     return labels[status] || status
   }
@@ -210,8 +210,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const getOrderStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       pending: 'Beklemede',
-      preparing: 'Hazırlanıyor',
-      delivered: 'Tamamlandı',
+      preparing: 'Preparing',
+      delivered: 'Completed',
     }
     return labels[status] || status
   }
@@ -241,7 +241,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         prev.map((order) => (order.order_id === orderId ? { ...order, status } : order))
       )
     } catch (err) {
-      console.error('Sipariş durumu güncellenemedi:', err)
+      console.error('Failed to update order status:', err)
     } finally {
       setUpdatingOrderId(null)
     }
@@ -252,7 +252,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       return (
         <div className="flex items-center justify-center h-64">
           <Spinner className="size-8" />
-          <span className="ml-2 text-muted-foreground">Yükleniyor...</span>
+          <span className="ml-2 text-muted-foreground">Loading...</span>
         </div>
       )
     }
@@ -262,13 +262,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         return (
           <>
             <DataTable
-              title="Kategoriler"
+              title="Categories"
               data={categories}
               columns={[
-                { key: 'name', header: 'Kategori Adı' },
-                { key: 'description', header: 'Açıklama' },
-                { key: 'is_active', header: 'Durum', render: (item) => <ActiveBadge isActive={item.is_active} /> },
-                { key: 'actions', header: 'İşlemler' },
+                { key: 'name', header: 'Category Name' },
+                { key: 'description', header: 'Description' },
+                { key: 'is_active', header: 'Status', render: (item) => <ActiveBadge isActive={item.is_active} /> },
+                { key: 'actions', header: 'Actions' },
               ]}
               idKey="category_id"
               onAdd={handleAdd}
@@ -294,14 +294,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         return (
           <>
             <DataTable
-              title="Ürünler"
+              title="Products"
               data={products}
               columns={[
-                { key: 'name', header: 'Ürün Adı' },
-                { key: 'price', header: 'Fiyat', render: (item) => `₺${item.price.toFixed(2)}` },
-                { key: 'category_id', header: 'Kategori', render: (item) => item.category_name || getCategoryName(item.category_id) },
-                { key: 'is_available', header: 'Durum', render: (item) => <AvailableBadge isAvailable={item.is_available} /> },
-                { key: 'actions', header: 'İşlemler' },
+                { key: 'name', header: 'Product Name' },
+                { key: 'price', header: 'Price', render: (item) => `₺${item.price.toFixed(2)}` },
+                { key: 'category_id', header: 'Category', render: (item) => item.category_name || getCategoryName(item.category_id) },
+                { key: 'is_available', header: 'Status', render: (item) => <AvailableBadge isAvailable={item.is_available} /> },
+                { key: 'actions', header: 'Actions' },
               ]}
               idKey="product_id"
               onAdd={handleAdd}
@@ -328,14 +328,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         return (
           <>
             <DataTable
-              title="Çalışanlar"
+              title="Employees"
               data={employees}
               columns={[
                 { key: 'first_name', header: 'Ad' },
                 { key: 'last_name', header: 'Soyad' },
-                { key: 'role', header: 'Rol' },
-                { key: 'phone', header: 'Telefon' },
-                { key: 'actions', header: 'İşlemler' },
+                { key: 'role', header: 'Role' },
+                { key: 'phone', header: 'Phone' },
+                { key: 'actions', header: 'Actions' },
               ]}
               idKey="employee_id"
               onAdd={handleAdd}
@@ -361,14 +361,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         return (
           <>
             <DataTable
-              title="Kuryeler"
+              title="Couriers"
               data={couriers}
               columns={[
                 { key: 'first_name', header: 'Ad' },
                 { key: 'last_name', header: 'Soyad' },
-                { key: 'vehicle_plate', header: 'Araç Plakası' },
-                { key: 'courier_status', header: 'Durum', render: (item) => <StatusBadge status={item.courier_status} label={getStatusLabel(item.courier_status)} /> },
-                { key: 'actions', header: 'İşlemler' },
+                { key: 'vehicle_plate', header: 'Vehicle Plate' },
+                { key: 'courier_status', header: 'Status', render: (item) => <StatusBadge status={item.courier_status} label={getStatusLabel(item.courier_status)} /> },
+                { key: 'actions', header: 'Actions' },
               ]}
               idKey="courier_id"
               onAdd={handleAdd}
@@ -394,13 +394,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         return (
           <>
             <DataTable
-              title="Masalar"
+              title="Tables"
               data={tables}
               columns={[
-                { key: 'table_number', header: 'Masa No' },
-                { key: 'capacity', header: 'Kapasite', render: (item) => `${item.capacity} kişi` },
-                { key: 'status', header: 'Durum', render: (item) => <StatusBadge status={item.status} label={getStatusLabel(item.status)} /> },
-                { key: 'actions', header: 'İşlemler' },
+                { key: 'table_number', header: 'Table No' },
+                { key: 'capacity', header: 'Capacity', render: (item) => `${item.capacity} seats` },
+                { key: 'status', header: 'Status', render: (item) => <StatusBadge status={item.status} label={getStatusLabel(item.status)} /> },
+                { key: 'actions', header: 'Actions' },
               ]}
               idKey="table_id"
               onAdd={handleAdd}
@@ -427,7 +427,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
           return (
             <div className="flex items-center justify-center h-64">
               <Spinner className="size-8" />
-              <span className="ml-2 text-muted-foreground">Siparişler yükleniyor...</span>
+              <span className="ml-2 text-muted-foreground">Loading orders...</span>
             </div>
           )
         }
@@ -435,7 +435,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         if (orders.length === 0) {
           return (
             <div className="text-sm text-muted-foreground">
-              Henüz sipariş bulunmuyor.
+              No orders found yet.
             </div>
           )
         }
@@ -448,7 +448,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 <Card key={order.order_id}>
                   <CardHeader>
                     <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
-                      <span>Sipariş #{order.order_id}</span>
+                      <span>Order #{order.order_id}</span>
                       <span className="text-sm font-normal text-muted-foreground">
                         {new Date(order.order_date).toLocaleString('tr-TR')}
                       </span>
@@ -458,8 +458,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     <div className="flex flex-wrap gap-2 text-sm">
                       <span className="rounded-md bg-muted px-2 py-1">
                         {order.order_type === 'dine-in'
-                          ? `Masa ${order.table_id ?? '-'}`
-                          : `Paket (Müşteri: ${order.customer_id ?? '-'})`}
+                          ? `Table ${order.table_id ?? '-'}`
+                          : `Takeaway (Customer: ${order.customer_id ?? '-'})`}
                       </span>
                       <span className="rounded-md bg-muted px-2 py-1">Durum: {getOrderStatusLabel(order.status)}</span>
                       <span className="rounded-md bg-muted px-2 py-1">
@@ -469,12 +469,12 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
                     <div className="space-y-2 rounded-md border p-3">
                       {details.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">Sipariş detayı bulunamadı.</p>
+                        <p className="text-sm text-muted-foreground">Order details not found.</p>
                       ) : (
                         details.map((detail) => (
                           <div key={detail.detail_id} className="flex items-center justify-between text-sm">
                             <span>
-                              {orderProducts[detail.product_id]?.name ?? `Ürün #${detail.product_id}`} x {detail.quantity}
+                              {orderProducts[detail.product_id]?.name ?? `Product #${detail.product_id}`} x {detail.quantity}
                             </span>
                             <span>₺{(Number(detail.unit_price) * detail.quantity).toFixed(2)}</span>
                           </div>
@@ -489,7 +489,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                         disabled={updatingOrderId === order.order_id}
                         onClick={() => updateOrderStatus(order.order_id, 'pending')}
                       >
-                        Beklemede
+                        Pending
                       </Button>
                       <Button
                         size="sm"
@@ -497,7 +497,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                         disabled={updatingOrderId === order.order_id}
                         onClick={() => updateOrderStatus(order.order_id, 'preparing')}
                       >
-                        Hazırlanıyor
+                        Preparing
                       </Button>
                       <Button
                         size="sm"
@@ -505,7 +505,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                         disabled={updatingOrderId === order.order_id}
                         onClick={() => updateOrderStatus(order.order_id, 'delivered')}
                       >
-                        Tamamlandı
+                        Completed
                       </Button>
                     </div>
                   </CardContent>
@@ -528,13 +528,13 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         <header className="flex h-14 items-center gap-4 border-b px-6">
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-6" />
-          <h1 className="text-lg font-semibold">Yönetim Paneli</h1>
+          <h1 className="text-lg font-semibold">Admin Panel</h1>
         </header>
         <main className="flex-1 p-6">
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Hata</AlertTitle>
+              <AlertTitle>Error</AlertTitle>
               <AlertDescription className="flex items-center justify-between">
                 <span>{error}</span>
                 <Button variant="ghost" size="sm" onClick={clearError}>
@@ -550,20 +550,20 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Silmek istediğinizden emin misiniz?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure you want to delete this?</AlertDialogTitle>
             <AlertDialogDescription>
-              Bu işlem geri alınamaz. Bu öğe kalıcı olarak silinecektir.
+              This action cannot be undone. This item will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>İptal</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteConfirm} 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isDeleting}
             >
               {isDeleting && <Spinner className="mr-2" />}
-              Sil
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

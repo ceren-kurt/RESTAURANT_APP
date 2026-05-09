@@ -76,7 +76,7 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
       })
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Bir hata oluştu')
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsSubmitting(false)
     }
@@ -86,38 +86,38 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{product ? 'Ürün Düzenle' : 'Yeni Ürün'}</DialogTitle>
+          <DialogTitle>{product ? 'Edit Product' : 'New Product'}</DialogTitle>
           <DialogDescription>
-            {product ? 'Ürün bilgilerini güncelleyin.' : 'Yeni bir ürün ekleyin.'}
+            {product ? 'Update product details.' : 'Add a new product.'}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <Label htmlFor="name">Ürün Adı</Label>
+              <Label htmlFor="name">Product Name</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ürün adını girin"
+                placeholder="Enter product name"
                 required
               />
             </Field>
             
             <Field>
-              <Label htmlFor="description">Açıklama</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description || ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Ürün açıklaması"
+                placeholder="Product description"
                 rows={3}
               />
             </Field>
             
             <Field>
-              <Label htmlFor="price">Fiyat (₺)</Label>
+              <Label htmlFor="price">Price (₺)</Label>
               <Input
                 id="price"
                 type="number"
@@ -131,7 +131,7 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
             </Field>
             
             <Field>
-              <Label htmlFor="image_url">Resim URL</Label>
+              <Label htmlFor="image_url">Image URL</Label>
               <Input
                 id="image_url"
                 value={formData.image_url || ''}
@@ -141,13 +141,13 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
             </Field>
             
             <Field>
-              <Label htmlFor="category">Kategori</Label>
+              <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category_id.toString()}
                 onValueChange={(value) => setFormData({ ...formData, category_id: parseInt(value) })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Kategori seçin" />
+                  <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
@@ -162,8 +162,8 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
             <Field className="rounded-lg border bg-muted/30 px-3 py-2.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="space-y-0.5">
-                  <Label htmlFor="is_available" className="text-sm font-medium">Müsait mi?</Label>
-                  <p className="text-xs text-muted-foreground">Ürünün satışta olup olmadığını belirler.</p>
+                  <Label htmlFor="is_available" className="text-sm font-medium">Available?</Label>
+                  <p className="text-xs text-muted-foreground">Determines whether the product is on sale.</p>
                 </div>
                 <Switch
                   id="is_available"
@@ -180,11 +180,11 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
           
           <DialogFooter className="mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-              İptal
+              Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Spinner className="mr-2" />}
-              {product ? 'Güncelle' : 'Ekle'}
+              {product ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </form>

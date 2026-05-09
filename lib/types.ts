@@ -1,4 +1,4 @@
-// Backend'den gelen snake_case isimlendirmeye uyumlu tipler
+// Types aligned with snake_case naming from backend
 
 export interface Category {
   category_id: number
@@ -62,7 +62,7 @@ export interface OrderDetail {
 
 export type EntityType = 'categories' | 'products' | 'employees' | 'couriers' | 'tables' | 'orders'
 
-// Form veri tipleri (POST/PUT istekleri için)
+// Form data types (for POST/PUT requests)
 export interface CategoryCreate {
   name: string
   description?: string | null

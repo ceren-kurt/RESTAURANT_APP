@@ -44,12 +44,12 @@ export function LoginDialog({ open, onOpenChange, onLogin }: LoginDialogProps) {
           fullError: adminError,
         })
         throw new Error(
-          `Giriş sorgusu başarısız: ${adminError.message}${adminError.code ? ` (code: ${adminError.code})` : ''}`
+          `Login query failed: ${adminError.message}${adminError.code ? ` (code: ${adminError.code})` : ''}`
         )
       }
 
       if (adminError || !data) {
-        throw new Error('Geçersiz kullanıcı adı veya şifre')
+        throw new Error('Invalid username or password')
       }
       
       localStorage.setItem('admin_id', data.username)
@@ -60,7 +60,7 @@ export function LoginDialog({ open, onOpenChange, onLogin }: LoginDialogProps) {
       if (err instanceof Error) {
         setError(err.message)
       } else {
-        setError('Geçersiz kullanıcı adı veya şifre')
+        setError('Invalid username or password')
       }
     } finally {
       setIsLoading(false)
@@ -74,20 +74,20 @@ export function LoginDialog({ open, onOpenChange, onLogin }: LoginDialogProps) {
           <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 w-fit">
             <ShieldCheck className="size-8 text-primary" />
           </div>
-          <DialogTitle className="text-xl">Yönetici Girişi</DialogTitle>
+          <DialogTitle className="text-xl">Admin Login</DialogTitle>
           <DialogDescription>
-            Yönetim paneline erişmek için giriş yapın
+            Sign in to access the admin panel
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="mt-4">
           <FieldGroup>
             <Field>
-              <Label htmlFor="username">Kullanıcı Adı</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="Kullanıcı adınızı girin"
+                placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -95,11 +95,11 @@ export function LoginDialog({ open, onOpenChange, onLogin }: LoginDialogProps) {
             </Field>
             
             <Field>
-              <Label htmlFor="password">Şifre</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Şifrenizi girin"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -114,7 +114,7 @@ export function LoginDialog({ open, onOpenChange, onLogin }: LoginDialogProps) {
           <div className="flex flex-col gap-3 mt-6">
             <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading && <Spinner className="mr-2" />}
-              Giriş Yap
+              Sign In
             </Button>
             <Button 
               type="button" 
@@ -122,7 +122,7 @@ export function LoginDialog({ open, onOpenChange, onLogin }: LoginDialogProps) {
               onClick={() => onOpenChange(false)}
               className="w-full"
             >
-              İptal
+              Cancel
             </Button>
           </div>
         </form>

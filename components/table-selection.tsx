@@ -24,12 +24,12 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
           .order('table_number', { ascending: true })
 
         if (error) {
-          throw new Error(error.message || 'Masalar yüklenemedi')
+          throw new Error(error.message || 'Tables could not be loaded')
         }
 
         setTables((data ?? []) as Table[])
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Bir hata oluştu')
+        setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
         setLoading(false)
       }
@@ -55,11 +55,11 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'available':
-        return 'Müsait'
+        return 'Available'
       case 'occupied':
-        return 'Dolu'
+        return 'Occupied'
       case 'reserved':
-        return 'Rezerve'
+        return 'Reserved'
       default:
         return status
     }
@@ -95,7 +95,7 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
         className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white/70 hover:text-white transition-colors"
       >
         <ArrowLeft className="size-5" />
-        <span className="font-medium">Geri</span>
+        <span className="font-medium">Back</span>
       </button>
       
       {/* Content */}
@@ -103,10 +103,10 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
         {/* Title */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight">
-            Masa Seçimi
+            Table Selection
           </h1>
           <p className="text-white/60 text-base md:text-lg">
-            Oturmak istediğiniz masayı seçin
+            Select the table you want to sit at
           </p>
         </div>
 
@@ -114,7 +114,7 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
         {loading && (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="size-12 text-red-500 animate-spin mb-4" />
-            <p className="text-white/60">Masalar yükleniyor...</p>
+            <p className="text-white/60">Loading tables...</p>
           </div>
         )}
 
@@ -123,7 +123,7 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
           <div className="backdrop-blur-md bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">
             <p className="text-red-400 font-medium">{error}</p>
             <p className="text-white/60 text-sm mt-2">
-              Supabase bağlantı ayarlarını kontrol edin
+              Check your Supabase connection settings
             </p>
           </div>
         )}
@@ -133,7 +133,7 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
           <>
             {availableTables.length === 0 && tables.length > 0 && (
               <div className="backdrop-blur-md bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-6 text-center mb-6">
-                <p className="text-yellow-400 font-medium">Şu anda müsait masa bulunmuyor</p>
+                <p className="text-yellow-400 font-medium">No available tables right now</p>
               </div>
             )}
             
@@ -161,7 +161,7 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
                     {/* Capacity */}
                     <div className="flex items-center gap-1 text-white/70 text-sm mb-3">
                       <Users className="size-4" />
-                      <span>{table.capacity} Kişilik</span>
+                      <span>{table.capacity} Seats</span>
                     </div>
                     
                     {/* Status Badge */}
@@ -175,7 +175,7 @@ export function TableSelection({ onSelectTable, onBack }: TableSelectionProps) {
 
             {tables.length === 0 && (
               <div className="backdrop-blur-md bg-zinc-800/70 border border-zinc-700/50 rounded-xl p-8 text-center">
-                <p className="text-white/60">Henüz masa tanımlanmamış</p>
+                <p className="text-white/60">No tables have been defined yet</p>
               </div>
             )}
           </>

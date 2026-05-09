@@ -38,7 +38,7 @@ export function DataTable<T>({
         <h2 className="text-2xl font-bold">{title}</h2>
         <Button onClick={onAdd}>
           <Plus className="size-4 mr-2" />
-          Ekle
+          Add
         </Button>
       </div>
       
@@ -48,9 +48,9 @@ export function DataTable<T>({
             <EmptyMedia variant="icon">
               <Inbox />
             </EmptyMedia>
-            <EmptyTitle>Veri bulunamadı</EmptyTitle>
+            <EmptyTitle>No data found</EmptyTitle>
             <EmptyDescription>
-              Yeni bir kayıt eklemek için &apos;Ekle&apos; butonunu kullanın.
+              Use the &apos;Add&apos; button to create a new record.
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -80,7 +80,7 @@ export function DataTable<T>({
                             className="size-8"
                           >
                             <Pencil className="size-4" />
-                            <span className="sr-only">Düzenle</span>
+                            <span className="sr-only">Edit</span>
                           </Button>
                           <Button
                             variant="ghost"
@@ -89,7 +89,7 @@ export function DataTable<T>({
                             className="size-8 text-destructive hover:text-destructive"
                           >
                             <Trash2 className="size-4" />
-                            <span className="sr-only">Sil</span>
+                            <span className="sr-only">Delete</span>
                           </Button>
                         </div>
                       ) : column.render ? (
@@ -131,7 +131,7 @@ export function ActiveBadge({ isActive }: { isActive: boolean | number }) {
   const active = Boolean(isActive)
   return (
     <Badge variant={active ? 'default' : 'destructive'}>
-      {active ? 'Aktif' : 'Pasif'}
+      {active ? 'Active' : 'Inactive'}
     </Badge>
   )
 }
@@ -140,7 +140,7 @@ export function AvailableBadge({ isAvailable }: { isAvailable: boolean | number 
   const available = Boolean(isAvailable)
   return (
     <Badge variant={available ? 'default' : 'secondary'}>
-      {available ? 'Müsait' : 'Mevcut Değil'}
+      {available ? 'Available' : 'Unavailable'}
     </Badge>
   )
 }

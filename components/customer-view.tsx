@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useApp } from '@/lib/app-context'
-import { ArrowLeft, ShoppingCart, Package, Armchair, Bike, Plus, Minus, Trash2 } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Package, Armchair, Bike, Plus, Minus, Trash2, ClipboardList } from 'lucide-react'
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from '@/components/ui/empty'
 import { Spinner } from '@/components/ui/spinner'
-import type { Table } from '@/lib/types'
+import type { Order, OrderDetail, Product, Table } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 
 interface CustomerViewProps {
@@ -23,8 +23,13 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [cart, setCart] = useState<{ productId: number; quantity: number }[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [activeScreen, setActiveScreen] = useState<'menu' | 'orders'>('menu')
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
   const [orderError, setOrderError] = useState<string | null>(null)
+  const [customerOrders, setCustomerOrders] = useState<Order[]>([])
+  const [customerOrderDetails, setCustomerOrderDetails] = useState<OrderDetail[]>([])
+  const [orderProducts, setOrderProducts] = useState<Record<number, Product>>({})
+  const [ordersLoading, setOrdersLoading] = useState(false)
 
   // Fetch data on mount for customer view
   useEffect(() => {
@@ -91,6 +96,88 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
     }, 0)
   }
 
+  const getOrderStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      pending: 'Preparing',
+      preparing: 'Preparing',
+      ready: 'Ready',
+      delivered: 'Delivered',
+      cancelled: 'Cancelled',
+    }
+    return labels[status] || status
+  }
+
+  const fetchCustomerOrders = async () => {
+    const parsedCustomerId = Number(localStorage.getItem('customer_id'))
+    const customerId = Number.isFinite(parsedCustomerId) ? parsedCustomerId : null
+    if (!customerId) {
+      setCustomerOrders([])
+      setCustomerOrderDetails([])
+      setOrderProducts({})
+      return
+    }
+
+    setOrdersLoading(true)
+    try {
+      const { data: orderRows, error: orderQueryError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('order_date', { ascending: false })
+
+      if (orderQueryError) {
+        throw new Error(orderQueryError.message || 'Orders could not be fetched')
+      }
+
+      const normalizedOrders = (orderRows ?? []) as Order[]
+      setCustomerOrders(normalizedOrders)
+
+      if (normalizedOrders.length === 0) {
+        setCustomerOrderDetails([])
+        setOrderProducts({})
+        return
+      }
+
+      const orderIds = normalizedOrders.map((order) => order.order_id)
+      const { data: detailRows, error: detailQueryError } = await supabase
+        .from('order_detail')
+        .select('*')
+        .in('order_id', orderIds)
+
+      if (detailQueryError) {
+        throw new Error(detailQueryError.message || 'Order details could not be fetched')
+      }
+
+      const normalizedDetails = (detailRows ?? []) as OrderDetail[]
+      setCustomerOrderDetails(normalizedDetails)
+
+      const productIds = [...new Set(normalizedDetails.map((detail) => detail.product_id))]
+      if (productIds.length === 0) {
+        setOrderProducts({})
+        return
+      }
+
+      const { data: productRows, error: productQueryError } = await supabase
+        .from('product')
+        .select('*')
+        .in('product_id', productIds)
+
+      if (productQueryError) {
+        throw new Error(productQueryError.message || 'Product information could not be fetched')
+      }
+
+      const productMap = ((productRows ?? []) as Product[]).reduce<Record<number, Product>>((acc, product) => {
+        acc[product.product_id] = product
+        return acc
+      }, {})
+      setOrderProducts(productMap)
+    } catch (err) {
+      setOrderError(err instanceof Error ? err.message : 'Orders could not be loaded')
+    } finally {
+      setOrdersLoading(false)
+    }
+  }
+
   const completeOrder = async () => {
     if (cart.length === 0) return
 
@@ -102,7 +189,7 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
       const customerId = Number.isFinite(parsedCustomerId) ? parsedCustomerId : null
 
       if (orderType === 'online' && !customerId) {
-        throw new Error('Online sipariş için customer_id bulunamadı')
+        throw new Error('customer_id not found for online order')
       }
 
       const totalAmount = getTotalPrice()
@@ -123,7 +210,7 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
         .single()
 
       if (orderErrorResponse || !orderData) {
-        throw new Error(orderErrorResponse?.message || 'Sipariş kaydedilemedi')
+        throw new Error(orderErrorResponse?.message || 'Order could not be saved')
       }
 
       const cartItems = getCartItems()
@@ -137,13 +224,16 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
       const { error: detailError } = await supabase.from('order_detail').insert(detailRows)
 
       if (detailError) {
-        throw new Error(detailError.message || 'Sipariş detayları kaydedilemedi')
+        throw new Error(detailError.message || 'Order details could not be saved')
       }
 
       setCart([])
       setIsCartOpen(false)
+      if (activeScreen === 'orders') {
+        await fetchCustomerOrders()
+      }
     } catch (err) {
-      setOrderError(err instanceof Error ? err.message : 'Sipariş tamamlanamadı')
+      setOrderError(err instanceof Error ? err.message : 'Order could not be completed')
     } finally {
       setIsSubmittingOrder(false)
     }
@@ -153,7 +243,7 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner className="size-8" />
-        <span className="ml-2 text-muted-foreground">Menü yükleniyor...</span>
+        <span className="ml-2 text-muted-foreground">Loading menu...</span>
       </div>
     )
   }
@@ -168,13 +258,13 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
               <ArrowLeft className="size-5" />
             </Button>
             <div>
-              <h1 className="text-xl font-bold">Menü</h1>
+              <h1 className="text-xl font-bold">Menu</h1>
               {/* Order Type Badge */}
               <div className="flex items-center gap-2 mt-0.5">
                 {orderType === 'dine-in' && selectedTable ? (
                   <Badge variant="secondary" className="text-xs flex items-center gap-1">
                     <Armchair className="size-3" />
-                    Masa {selectedTable.table_number}
+                    Table {selectedTable.table_number}
                   </Badge>
                 ) : (
                   <Badge variant="secondary" className="text-xs flex items-center gap-1">
@@ -186,15 +276,27 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
             </div>
           </div>
           
-          <Button variant="outline" className="relative" onClick={() => setIsCartOpen(true)}>
-            <ShoppingCart className="size-5 mr-2" />
-            Sepet
-            {getTotalItems() > 0 && (
-              <Badge className="absolute -top-2 -right-2 size-5 p-0 flex items-center justify-center">
-                {getTotalItems()}
-              </Badge>
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={activeScreen === 'orders' ? 'default' : 'outline'}
+              onClick={async () => {
+                setActiveScreen('orders')
+                await fetchCustomerOrders()
+              }}
+            >
+              <ClipboardList className="size-5 mr-2" />
+              My Orders
+            </Button>
+            <Button variant="outline" className="relative" onClick={() => setIsCartOpen(true)}>
+              <ShoppingCart className="size-5 mr-2" />
+              Sepet
+              {getTotalItems() > 0 && (
+                <Badge className="absolute -top-2 -right-2 size-5 p-0 flex items-center justify-center">
+                  {getTotalItems()}
+                </Badge>
+              )}
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -202,7 +304,7 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
         <SheetContent side="right" className="w-full sm:max-w-md">
           <SheetHeader>
             <SheetTitle>Sepet</SheetTitle>
-            <SheetDescription>Eklediğiniz ürünleri buradan kontrol edebilirsiniz.</SheetDescription>
+            <SheetDescription>Review your selected items here.</SheetDescription>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-4 pb-4">
@@ -212,7 +314,7 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
               </p>
             )}
             {getCartItems().length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sepetiniz şu anda boş.</p>
+              <p className="text-sm text-muted-foreground">Your cart is currently empty.</p>
             ) : (
               <div className="space-y-3">
                 {getCartItems().map((item) => (
@@ -271,7 +373,7 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
                 disabled={getTotalItems() === 0 || isSubmittingOrder}
                 onClick={completeOrder}
               >
-                {isSubmittingOrder ? 'Kaydediliyor...' : 'Siparişi Tamamla'}
+                {isSubmittingOrder ? 'Saving...' : 'Complete Order'}
               </Button>
             </div>
           </SheetFooter>
@@ -279,6 +381,69 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
       </Sheet>
 
       <main className="container mx-auto px-4 py-6">
+        {activeScreen === 'orders' ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">My Orders</h2>
+              <Button variant="outline" size="sm" onClick={() => setActiveScreen('menu')}>
+                Back to Menu
+              </Button>
+            </div>
+
+            {ordersLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Spinner className="size-6" />
+                <span className="ml-2 text-muted-foreground">Loading orders...</span>
+              </div>
+            ) : customerOrders.length === 0 ? (
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <ClipboardList />
+                  </EmptyMedia>
+                  <EmptyTitle>No orders found</EmptyTitle>
+                  <EmptyDescription>You do not have any orders yet.</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
+            ) : (
+              customerOrders.map((order) => {
+                const details = customerOrderDetails.filter((detail) => detail.order_id === order.order_id)
+                return (
+                  <Card key={order.order_id}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center justify-between text-base">
+                        <span>Order #{order.order_id}</span>
+                        <Badge variant="secondary">{getOrderStatusLabel(order.status)}</Badge>
+                      </CardTitle>
+                      <CardDescription>
+                        {new Date(order.order_date).toLocaleString('tr-TR')}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {details.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Order details not found.</p>
+                      ) : (
+                        details.map((detail) => (
+                          <div key={detail.detail_id} className="flex items-center justify-between text-sm">
+                            <span>
+                              {orderProducts[detail.product_id]?.name ?? `Product #${detail.product_id}`} x {detail.quantity}
+                            </span>
+                            <span>₺{(Number(detail.unit_price) * detail.quantity).toFixed(2)}</span>
+                          </div>
+                        ))
+                      )}
+                      <div className="mt-3 flex items-center justify-between border-t pt-3">
+                        <span className="text-sm text-muted-foreground">Toplam Tutar</span>
+                        <span className="font-semibold">₺{Number(order.total_amount).toFixed(2)}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })
+            )}
+          </div>
+        ) : (
+          <>
         {/* Categories */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-4">Kategoriler</h2>
@@ -288,7 +453,7 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
               onClick={() => setSelectedCategory(null)}
               size="sm"
             >
-              Tümü
+              All
             </Button>
             {activeCategories.map((category) => (
               <Button
@@ -308,7 +473,7 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
           <h2 className="text-lg font-semibold mb-4">
             {selectedCategory 
               ? categories.find(c => c.category_id === selectedCategory)?.name 
-              : 'Tüm Ürünler'
+              : 'All Products'
             }
           </h2>
           
@@ -318,9 +483,9 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
                 <EmptyMedia variant="icon">
                   <Package />
                 </EmptyMedia>
-                <EmptyTitle>Ürün bulunamadı</EmptyTitle>
+                <EmptyTitle>No products found</EmptyTitle>
                 <EmptyDescription>
-                  Bu kategoride henüz ürün bulunmuyor.
+                  No products are available in this category yet.
                 </EmptyDescription>
               </EmptyHeader>
             </Empty>
@@ -344,7 +509,7 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
                       size="sm"
                       onClick={() => addToCart(product.product_id)}
                     >
-                      Sepete Ekle
+                      Add to Cart
                     </Button>
                   </CardContent>
                 </Card>
@@ -352,7 +517,8 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
             </div>
           )}
         </div>
-
+          </>
+        )}
       </main>
     </div>
   )

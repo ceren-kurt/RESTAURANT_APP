@@ -54,7 +54,7 @@ export function EmployeeForm({ open, onOpenChange, employee, onSubmit }: Employe
       await onSubmit(formData)
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Bir hata oluştu')
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsSubmitting(false)
     }
@@ -64,49 +64,49 @@ export function EmployeeForm({ open, onOpenChange, employee, onSubmit }: Employe
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{employee ? 'Çalışan Düzenle' : 'Yeni Çalışan'}</DialogTitle>
+          <DialogTitle>{employee ? 'Edit Employee' : 'New Employee'}</DialogTitle>
           <DialogDescription>
-            {employee ? 'Çalışan bilgilerini güncelleyin.' : 'Yeni bir çalışan ekleyin.'}
+            {employee ? 'Update employee details.' : 'Add a new employee.'}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <Label htmlFor="first_name">Ad</Label>
+              <Label htmlFor="first_name">First Name</Label>
               <Input
                 id="first_name"
                 value={formData.first_name}
                 onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                placeholder="Çalışan adı"
+                placeholder="Employee first name"
                 required
               />
             </Field>
             
             <Field>
-              <Label htmlFor="last_name">Soyad</Label>
+              <Label htmlFor="last_name">Last Name</Label>
               <Input
                 id="last_name"
                 value={formData.last_name}
                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                placeholder="Çalışan soyadı"
+                placeholder="Employee last name"
                 required
               />
             </Field>
             
             <Field>
-              <Label htmlFor="role">Rol</Label>
+              <Label htmlFor="role">Role</Label>
               <Input
                 id="role"
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                placeholder="Örn: Şef, Garson, Kasiyer"
+                placeholder="E.g: Chef, Waiter, Cashier"
                 required
               />
             </Field>
             
             <Field>
-              <Label htmlFor="phone">Telefon</Label>
+              <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -123,11 +123,11 @@ export function EmployeeForm({ open, onOpenChange, employee, onSubmit }: Employe
           
           <DialogFooter className="mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-              İptal
+              Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Spinner className="mr-2" />}
-              {employee ? 'Güncelle' : 'Ekle'}
+              {employee ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </form>

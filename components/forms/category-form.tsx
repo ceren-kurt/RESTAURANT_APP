@@ -66,7 +66,7 @@ export function CategoryForm({ open, onOpenChange, category, onSubmit }: Categor
       })
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Bir hata oluştu')
+      setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsSubmitting(false)
     }
@@ -76,38 +76,38 @@ export function CategoryForm({ open, onOpenChange, category, onSubmit }: Categor
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{category ? 'Kategori Düzenle' : 'Yeni Kategori'}</DialogTitle>
+          <DialogTitle>{category ? 'Edit Category' : 'New Category'}</DialogTitle>
           <DialogDescription>
-            {category ? 'Kategori bilgilerini güncelleyin.' : 'Yeni bir kategori ekleyin.'}
+            {category ? 'Update category details.' : 'Add a new category.'}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <Label htmlFor="name">Kategori Adı</Label>
+              <Label htmlFor="name">Category Name</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Kategori adını girin"
+                placeholder="Enter category name"
                 required
               />
             </Field>
             
             <Field>
-              <Label htmlFor="description">Açıklama</Label>
+              <Label htmlFor="description">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description || ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Kategori açıklaması"
+                placeholder="Category description"
                 rows={3}
               />
             </Field>
             
             <Field>
-              <Label htmlFor="image_url">Resim URL</Label>
+              <Label htmlFor="image_url">Image URL</Label>
               <Input
                 id="image_url"
                 value={formData.image_url || ''}
@@ -118,8 +118,8 @@ export function CategoryForm({ open, onOpenChange, category, onSubmit }: Categor
             
             <Field className="flex flex-row items-center justify-between">
               <div>
-                <Label htmlFor="is_active">Aktif mi?</Label>
-                <p className="text-sm text-muted-foreground">Kategoriyi aktif/pasif yapın</p>
+                <Label htmlFor="is_active">Active?</Label>
+                <p className="text-sm text-muted-foreground">Set category active/inactive</p>
               </div>
               <Switch
                 id="is_active"
@@ -135,11 +135,11 @@ export function CategoryForm({ open, onOpenChange, category, onSubmit }: Categor
           
           <DialogFooter className="mt-6">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-              İptal
+              Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Spinner className="mr-2" />}
-              {category ? 'Güncelle' : 'Ekle'}
+              {category ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </form>

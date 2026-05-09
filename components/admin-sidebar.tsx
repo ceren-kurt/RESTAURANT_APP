@@ -27,11 +27,11 @@ interface AdminSidebarProps {
 
 const menuItems: { id: EntityType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'categories', label: 'Kategoriler', icon: LayoutGrid },
-  { id: 'products', label: 'Ürünler', icon: Package },
-  { id: 'employees', label: 'Çalışanlar', icon: Users },
+  { id: 'products', label: 'Products', icon: Package },
+  { id: 'employees', label: 'Employees', icon: Users },
   { id: 'couriers', label: 'Kuryeler', icon: Truck },
   { id: 'tables', label: 'Masalar', icon: TableIcon },
-  { id: 'orders', label: 'Siparişler', icon: ClipboardList },
+  { id: 'orders', label: 'Orders', icon: ClipboardList },
 ]
 
 export function AdminSidebar({ activeSection, onSectionChange, onLogout }: AdminSidebarProps) {
@@ -59,7 +59,7 @@ export function AdminSidebar({ activeSection, onSectionChange, onLogout }: Admin
           .lt('order_date', endOfDay.toISOString())
 
         if (error) {
-          console.error('Günlük kazanç sorgusu hatası:', error)
+          console.error('Daily revenue query error:', error)
           return
         }
 
@@ -98,14 +98,14 @@ export function AdminSidebar({ activeSection, onSectionChange, onLogout }: Admin
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
             <span className="font-semibold text-sm">Restoran</span>
-            <span className="text-xs text-muted-foreground">Yönetim Paneli</span>
+            <span className="text-xs text-muted-foreground">Admin Panel</span>
           </div>
         </div>
       </SidebarHeader>
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Yönetim</SidebarGroupLabel>
+          <SidebarGroupLabel>Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -125,15 +125,15 @@ export function AdminSidebar({ activeSection, onSectionChange, onLogout }: Admin
         </SidebarGroup>
 
         <div className="mx-2 mt-2 rounded-xl border border-sidebar-border/80 bg-sidebar-accent/40 p-3 group-data-[collapsible=icon]:hidden">
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Günlük Toplam Kazanç</p>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Daily Total Revenue</p>
           {isRevenueLoading ? (
             <div className="mt-2 flex items-center gap-2">
               <Spinner className="size-4" />
-              <span className="text-sm text-muted-foreground">Yükleniyor...</span>
+              <span className="text-sm text-muted-foreground">Loading...</span>
             </div>
           ) : (
             <p className="mt-2 text-lg font-semibold text-emerald-600 dark:text-emerald-400">
-              Günlük Kazanç: {formattedRevenue}
+              Daily Revenue: {formattedRevenue}
             </p>
           )}
         </div>
@@ -142,9 +142,9 @@ export function AdminSidebar({ activeSection, onSectionChange, onLogout }: Admin
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={onLogout} tooltip="Çıkış Yap">
+            <SidebarMenuButton onClick={onLogout} tooltip="Sign Out">
               <LogOut className="size-4" />
-              <span>Çıkış Yap</span>
+              <span>Sign Out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

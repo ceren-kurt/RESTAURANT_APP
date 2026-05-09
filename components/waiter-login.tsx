@@ -26,7 +26,7 @@ export function WaiterLogin({ onBack, onSuccess }: WaiterLoginProps) {
     try {
       const parsedEmployeeId = Number(employeeId)
       if (!Number.isFinite(parsedEmployeeId)) {
-        throw new Error('Geçerli bir employee_id girin')
+        throw new Error('Enter a valid employee_id')
       }
 
       const { data, error: queryError } = await supabase
@@ -36,17 +36,17 @@ export function WaiterLogin({ onBack, onSuccess }: WaiterLoginProps) {
         .maybeSingle()
 
       if (queryError) {
-        throw new Error(queryError.message || 'Giriş sırasında bir hata oluştu')
+        throw new Error(queryError.message || 'An error occurred during login')
       }
 
       if (!data?.employee_id) {
-        throw new Error('Garson bulunamadı')
+        throw new Error('Waiter not found')
       }
 
       localStorage.setItem('employee_id', data.employee_id.toString())
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Giriş başarısız')
+      setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
       setIsLoading(false)
     }
@@ -59,7 +59,7 @@ export function WaiterLogin({ onBack, onSuccess }: WaiterLoginProps) {
 
       <button onClick={onBack} className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white/70 hover:text-white transition-colors">
         <ArrowLeft className="size-5" />
-        <span className="font-medium">Geri</span>
+        <span className="font-medium">Back</span>
       </button>
 
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-zinc-700/50 bg-zinc-900/80 p-6 backdrop-blur-md shadow-2xl">
@@ -67,8 +67,8 @@ export function WaiterLogin({ onBack, onSuccess }: WaiterLoginProps) {
           <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-primary/20">
             <UserCheck className="size-6 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Garson Girişi</h1>
-          <p className="mt-1 text-sm text-white/60">employee_id ile giriş yapın</p>
+          <h1 className="text-2xl font-bold text-white">Waiter Login</h1>
+          <p className="mt-1 text-sm text-white/60">Sign in with employee_id</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -79,14 +79,14 @@ export function WaiterLogin({ onBack, onSuccess }: WaiterLoginProps) {
               type="number"
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
-              placeholder="Örn: 12"
+              placeholder="E.g: 12"
               required
             />
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Spinner className="mr-2" />}
-            Giriş Yap
+            Sign In
           </Button>
         </form>
 

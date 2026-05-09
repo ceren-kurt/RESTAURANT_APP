@@ -56,31 +56,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Fetch all data
   const fetchCategories = async () => {
     const { data, error } = await supabase.from('category').select('*')
-    throwSupabaseError(error, 'Kategoriler yüklenemedi')
+    throwSupabaseError(error, 'Categories could not be loaded')
     setCategories((data ?? []) as Category[])
   }
 
   const fetchProducts = async () => {
     const { data, error } = await supabase.from('product').select('*')
-    throwSupabaseError(error, 'Ürünler yüklenemedi')
+    throwSupabaseError(error, 'Products could not be loaded')
     setProducts((data ?? []) as Product[])
   }
 
   const fetchEmployees = async () => {
     const { data, error } = await supabase.from('employee').select('*')
-    throwSupabaseError(error, 'Çalışanlar yüklenemedi')
+    throwSupabaseError(error, 'Employees could not be loaded')
     setEmployees((data ?? []) as Employee[])
   }
 
   const fetchCouriers = async () => {
     const { data, error } = await supabase.from('courier').select('*')
-    throwSupabaseError(error, 'Kuryeler yüklenemedi')
+    throwSupabaseError(error, 'Couriers could not be loaded')
     setCouriers((data ?? []) as Courier[])
   }
 
   const fetchTables = async () => {
     const { data, error } = await supabase.from('tables').select('*')
-    throwSupabaseError(error, 'Masalar yüklenemedi')
+    throwSupabaseError(error, 'Tables could not be loaded')
     setTables((data ?? []) as Table[])
   }
 
@@ -96,7 +96,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetchTables(),
       ])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Veri yüklenirken hata oluştu')
+      setError(err instanceof Error ? err.message : 'An error occurred while loading data')
     } finally {
       setLoading(false)
     }
@@ -114,10 +114,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addCategory = async (category: CategoryCreate) => {
     try {
       const { error } = await supabase.from('category').insert(category)
-      throwSupabaseError(error, 'Kategori eklenemedi')
+      throwSupabaseError(error, 'Category could not be added')
       await fetchCategories()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kategori eklenemedi')
+      setError(err instanceof Error ? err.message : 'Category could not be added')
       throw err
     }
   }
@@ -128,10 +128,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .from('category')
         .update(category)
         .eq('category_id', id)
-      throwSupabaseError(error, 'Kategori güncellenemedi')
+      throwSupabaseError(error, 'Category could not be updated')
       await fetchCategories()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kategori güncellenemedi')
+      setError(err instanceof Error ? err.message : 'Category could not be updated')
       throw err
     }
   }
@@ -139,10 +139,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteCategory = async (id: number) => {
     try {
       const { error } = await supabase.from('category').delete().eq('category_id', id)
-      throwSupabaseError(error, 'Kategori silinemedi')
+      throwSupabaseError(error, 'Category could not be deleted')
       await fetchCategories()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kategori silinemedi')
+      setError(err instanceof Error ? err.message : 'Category could not be deleted')
       throw err
     }
   }
@@ -151,10 +151,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addProduct = async (product: ProductCreate) => {
     try {
       const { error } = await supabase.from('product').insert(product)
-      throwSupabaseError(error, 'Ürün eklenemedi')
+      throwSupabaseError(error, 'Product could not be added')
       await fetchProducts()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ürün eklenemedi')
+      setError(err instanceof Error ? err.message : 'Product could not be added')
       throw err
     }
   }
@@ -165,10 +165,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .from('product')
         .update(product)
         .eq('product_id', id)
-      throwSupabaseError(error, 'Ürün güncellenemedi')
+      throwSupabaseError(error, 'Product could not be updated')
       await fetchProducts()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ürün güncellenemedi')
+      setError(err instanceof Error ? err.message : 'Product could not be updated')
       throw err
     }
   }
@@ -176,10 +176,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteProduct = async (id: number) => {
     try {
       const { error } = await supabase.from('product').delete().eq('product_id', id)
-      throwSupabaseError(error, 'Ürün silinemedi')
+      throwSupabaseError(error, 'Product could not be deleted')
       await fetchProducts()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ürün silinemedi')
+      setError(err instanceof Error ? err.message : 'Product could not be deleted')
       throw err
     }
   }
@@ -188,10 +188,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addEmployee = async (employee: EmployeeCreate) => {
     try {
       const { error } = await supabase.from('employee').insert(employee)
-      throwSupabaseError(error, 'Çalışan eklenemedi')
+      throwSupabaseError(error, 'Employee could not be added')
       await fetchEmployees()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Çalışan eklenemedi')
+      setError(err instanceof Error ? err.message : 'Employee could not be added')
       throw err
     }
   }
@@ -202,10 +202,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .from('employee')
         .update(employee)
         .eq('employee_id', id)
-      throwSupabaseError(error, 'Çalışan güncellenemedi')
+      throwSupabaseError(error, 'Employee could not be updated')
       await fetchEmployees()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Çalışan güncellenemedi')
+      setError(err instanceof Error ? err.message : 'Employee could not be updated')
       throw err
     }
   }
@@ -213,10 +213,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteEmployee = async (id: number) => {
     try {
       const { error } = await supabase.from('employee').delete().eq('employee_id', id)
-      throwSupabaseError(error, 'Çalışan silinemedi')
+      throwSupabaseError(error, 'Employee could not be deleted')
       await fetchEmployees()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Çalışan silinemedi')
+      setError(err instanceof Error ? err.message : 'Employee could not be deleted')
       throw err
     }
   }
@@ -225,10 +225,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addCourier = async (courier: CourierCreate) => {
     try {
       const { error } = await supabase.from('courier').insert(courier)
-      throwSupabaseError(error, 'Kurye eklenemedi')
+      throwSupabaseError(error, 'Courier could not be added')
       await fetchCouriers()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kurye eklenemedi')
+      setError(err instanceof Error ? err.message : 'Courier could not be added')
       throw err
     }
   }
@@ -239,10 +239,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .from('courier')
         .update(courier)
         .eq('courier_id', id)
-      throwSupabaseError(error, 'Kurye güncellenemedi')
+      throwSupabaseError(error, 'Courier could not be updated')
       await fetchCouriers()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kurye güncellenemedi')
+      setError(err instanceof Error ? err.message : 'Courier could not be updated')
       throw err
     }
   }
@@ -250,10 +250,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteCourier = async (id: number) => {
     try {
       const { error } = await supabase.from('courier').delete().eq('courier_id', id)
-      throwSupabaseError(error, 'Kurye silinemedi')
+      throwSupabaseError(error, 'Courier could not be deleted')
       await fetchCouriers()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kurye silinemedi')
+      setError(err instanceof Error ? err.message : 'Courier could not be deleted')
       throw err
     }
   }
@@ -262,10 +262,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addTable = async (table: TableCreate) => {
     try {
       const { error } = await supabase.from('tables').insert(table)
-      throwSupabaseError(error, 'Masa eklenemedi')
+      throwSupabaseError(error, 'Table could not be added')
       await fetchTables()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Masa eklenemedi')
+      setError(err instanceof Error ? err.message : 'Table could not be added')
       throw err
     }
   }
@@ -276,10 +276,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .from('tables')
         .update(table)
         .eq('table_id', id)
-      throwSupabaseError(error, 'Masa güncellenemedi')
+      throwSupabaseError(error, 'Table could not be updated')
       await fetchTables()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Masa güncellenemedi')
+      setError(err instanceof Error ? err.message : 'Table could not be updated')
       throw err
     }
   }
@@ -287,10 +287,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const deleteTable = async (id: number) => {
     try {
       const { error } = await supabase.from('tables').delete().eq('table_id', id)
-      throwSupabaseError(error, 'Masa silinemedi')
+      throwSupabaseError(error, 'Table could not be deleted')
       await fetchTables()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Masa silinemedi')
+      setError(err instanceof Error ? err.message : 'Table could not be deleted')
       throw err
     }
   }

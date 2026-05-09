@@ -23,10 +23,10 @@ export function LandingPage({ onSelectRole }: LandingPageProps) {
         {/* Title */}
         <div className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 tracking-tight">
-            Restoran Yönetim Sistemi
+            Restaurant Management System
           </h1>
           <p className="text-white/60 text-base md:text-lg">
-            Giriş şeklinizi seçin
+            Choose your access role
           </p>
         </div>
         
@@ -52,12 +52,12 @@ export function LandingPage({ onSelectRole }: LandingPageProps) {
                 
                 {/* Title */}
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  Yönetici
+                  Admin
                 </h2>
                 
                 {/* Description */}
                 <p className="text-white/60 text-sm mb-5">
-                  Restoran yönetim paneline erişim
+                  Access the restaurant admin panel
                 </p>
                 
                 {/* Skewed Red Button */}
@@ -67,7 +67,7 @@ export function LandingPage({ onSelectRole }: LandingPageProps) {
                 >
                   <div className="relative transform -skew-x-6 bg-red-600 border-2 border-black px-6 py-3 shadow-lg transition-all duration-200 hover:bg-red-500 hover:scale-105">
                     <span className="block transform skew-x-6 text-white font-bold text-lg italic tracking-wide">
-                      Giriş Yap
+                      Sign In
                     </span>
                   </div>
                 </button>
@@ -96,12 +96,12 @@ export function LandingPage({ onSelectRole }: LandingPageProps) {
                 
                 {/* Title */}
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  Müşteri
+                  Customer
                 </h2>
                 
                 {/* Description */}
                 <p className="text-white/60 text-sm mb-5">
-                  Menüyü görüntüle ve sipariş ver
+                  Browse the menu and place an order
                 </p>
                 
                 {/* Skewed Yellow Button */}
@@ -111,7 +111,7 @@ export function LandingPage({ onSelectRole }: LandingPageProps) {
                 >
                   <div className="relative transform -skew-x-6 bg-yellow-400 border-2 border-black px-6 py-3 shadow-lg transition-all duration-200 hover:bg-yellow-300 hover:scale-105">
                     <span className="block transform skew-x-6 text-black font-bold text-lg italic tracking-wide">
-                      Menüye Git
+                      Go to Menu
                     </span>
                   </div>
                 </button>
@@ -128,13 +128,13 @@ export function LandingPage({ onSelectRole }: LandingPageProps) {
                   <UserCheck className="relative size-14 text-cyan-300 drop-shadow-lg" />
                 </div>
 
-                <h2 className="text-2xl font-bold text-white mb-2">Garson</h2>
+                <h2 className="text-2xl font-bold text-white mb-2">Waiter</h2>
 
-                <p className="text-white/60 text-sm mb-5">Masa siparişlerini yönet</p>
+                <p className="text-white/60 text-sm mb-5">Manage table orders</p>
 
                 <button onClick={() => onSelectRole('waiter')} className="w-full relative group">
                   <div className="relative transform -skew-x-6 bg-cyan-400 border-2 border-black px-6 py-3 shadow-lg transition-all duration-200 hover:bg-cyan-300 hover:scale-105">
-                    <span className="block transform skew-x-6 text-black font-bold text-lg italic tracking-wide">Giriş Yap</span>
+                    <span className="block transform skew-x-6 text-black font-bold text-lg italic tracking-wide">Sign In</span>
                   </div>
                 </button>
               </div>
