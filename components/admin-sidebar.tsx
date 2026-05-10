@@ -51,6 +51,7 @@ export function AdminSidebar({ activeSection, onSectionChange, onLogout }: Admin
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
         const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
 
+        // Sum only completed orders: status must be 'delivered' (pending, preparing, ready are excluded)
         const { data, error } = await supabase
           .from('orders')
           .select('total_amount')

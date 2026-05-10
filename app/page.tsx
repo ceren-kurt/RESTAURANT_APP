@@ -5,30 +5,23 @@ import { AppProvider, useApp } from '@/lib/app-context'
 import { LandingPage } from '@/components/landing-page'
 import { LoginDialog } from '@/components/login-dialog'
 import { AdminDashboard } from '@/components/admin-dashboard'
-import { CustomerSelection } from '@/components/customer-selection'
 import { CustomerAuth } from '@/components/customer-auth'
-import { TableSelection } from '@/components/table-selection'
 import { CustomerView } from '@/components/customer-view'
 import { WaiterLogin } from '@/components/waiter-login'
 import { WaiterPage } from '@/components/waiter-page'
-import type { Table } from '@/lib/types'
 
 type AppState =
   | 'landing'
   | 'admin'
   | 'waiter-login'
   | 'waiter'
-  | 'customer-selection'
   | 'customer-auth'
-  | 'table-selection'
-  | 'customer-dinein'
   | 'customer-online'
 
 function AppContent() {
   const [appState, setAppState] = useState<AppState>('landing')
   const [showLogin, setShowLogin] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
-  const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const { refreshData } = useApp()
 
   // Check for existing admin/waiter session on mount
@@ -49,7 +42,7 @@ function AppContent() {
     } else if (role === 'waiter') {
       setAppState('waiter-login')
     } else {
-      setAppState('customer-selection')
+      setAppState('customer-auth')
     }
   }
 
@@ -75,29 +68,14 @@ function AppContent() {
 
   const handleBackToLanding = () => {
     setAppState('landing')
-    setSelectedTable(null)
   }
 
-  const handleBackToCustomerSelection = () => {
-    setAppState('customer-selection')
-    setSelectedTable(null)
-  }
-
-  const handleSelectDineIn = () => {
-    setAppState('table-selection')
-  }
-
-  const handleSelectOnline = () => {
+  const handleBackToCustomerAuth = () => {
     setAppState('customer-auth')
   }
 
   const handleCustomerAuthSuccess = () => {
     setAppState('customer-online')
-  }
-
-  const handleSelectTable = (table: Table) => {
-    setSelectedTable(table)
-    setAppState('customer-dinein')
   }
 
   // Show nothing while checking auth
@@ -117,61 +95,18 @@ function AppContent() {
     return <WaiterPage onBack={handleWaiterLogout} />
   }
 
-  if (appState === 'customer-selection') {
-    return (
-      <CustomerSelection
-        onSelectDineIn={handleSelectDineIn}
-        onSelectOnline={handleSelectOnline}
-        onBack={handleBackToLanding}
-      />
-    )
-  }
-
-  if (appState === 'table-selection') {
-    return (
-      <TableSelection
-        onSelectTable={handleSelectTable}
-        onBack={handleBackToCustomerSelection}
-      />
-    )
-  }
-
   if (appState === 'customer-auth') {
-    return (
-      <CustomerAuth
-        onBack={handleBackToCustomerSelection}
-        onSuccess={handleCustomerAuthSuccess}
-      />
-    )
-  }
-
-  if (appState === 'customer-dinein') {
-    return (
-      <CustomerView 
-        onBack={handleBackToCustomerSelection} 
-        selectedTable={selectedTable}
-        orderType="dine-in"
-      />
-    )
+    return <CustomerAuth onBack={handleBackToLanding} onSuccess={handleCustomerAuthSuccess} />
   }
 
   if (appState === 'customer-online') {
-    return (
-      <CustomerView 
-        onBack={handleBackToCustomerSelection}
-        orderType="online"
-      />
-    )
+    return <CustomerView onBack={handleBackToCustomerAuth} />
   }
 
   return (
     <>
       <LandingPage onSelectRole={handleSelectRole} />
-      <LoginDialog 
-        open={showLogin} 
-        onOpenChange={setShowLogin}
-        onLogin={handleLogin}
-      />
+      <LoginDialog open={showLogin} onOpenChange={setShowLogin} onLogin={handleLogin} />
     </>
   )
 }

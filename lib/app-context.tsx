@@ -36,10 +36,33 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
+/** Shown when DB blocks enabling a product because its category is inactive */
+export const PRODUCT_REQUIRES_ACTIVE_CATEGORY_MESSAGE =
+  'Cannot enable this product. Its category is inactive. Please enable the category first.'
+
+const CATEGORY_INACTIVE_FOR_PRODUCT_TRIGGER = 'Cannot enable product: its category is inactive'
+
 function throwSupabaseError(error: { message: string } | null, fallbackMessage: string) {
   if (error) {
     throw new Error(error.message || fallbackMessage)
   }
+}
+
+function getPostgrestErrorText(error: { message?: string; details?: string; hint?: string } | null): string {
+  if (!error) return ''
+  return [error.message, error.details, error.hint].filter(Boolean).join(' ')
+}
+
+function throwProductMutationError(
+  error: { message?: string; details?: string; hint?: string } | null,
+  fallbackMessage: string
+): void {
+  if (!error) return
+  const text = getPostgrestErrorText(error)
+  if (text.includes(CATEGORY_INACTIVE_FOR_PRODUCT_TRIGGER)) {
+    throw new Error(PRODUCT_REQUIRES_ACTIVE_CATEGORY_MESSAGE)
+  }
+  throwSupabaseError(error as { message: string }, fallbackMessage)
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -151,10 +174,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addProduct = async (product: ProductCreate) => {
     try {
       const { error } = await supabase.from('product').insert(product)
-      throwSupabaseError(error, 'Product could not be added')
+      throwProductMutationError(error, 'Product could not be added')
       await fetchProducts()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Product could not be added')
+      const msg = err instanceof Error ? err.message : 'Product could not be added'
+      if (msg !== PRODUCT_REQUIRES_ACTIVE_CATEGORY_MESSAGE) {
+        setError(msg)
+      }
       throw err
     }
   }
@@ -165,10 +191,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .from('product')
         .update(product)
         .eq('product_id', id)
-      throwSupabaseError(error, 'Product could not be updated')
+      throwProductMutationError(error, 'Product could not be updated')
       await fetchProducts()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Product could not be updated')
+      const msg = err instanceof Error ? err.message : 'Product could not be updated'
+      if (msg !== PRODUCT_REQUIRES_ACTIVE_CATEGORY_MESSAGE) {
+        setError(msg)
+      }
       throw err
     }
   }

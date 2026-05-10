@@ -1,11 +1,19 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Plus, Minus, Receipt, CreditCard } from 'lucide-react'
+import { ArrowLeft, Plus, Minus, Receipt, CreditCard, PackagePlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { supabase } from '@/lib/supabase'
 import type { Order, OrderDetail, Product, Table } from '@/lib/types'
 
@@ -14,6 +22,10 @@ interface WaiterPageProps {
 }
 
 type CartItem = { productId: number; quantity: number }
+
+function canAddProductsToOrder(status: string) {
+  return status === 'pending' || status === 'preparing'
+}
 
 export function WaiterPage({ onBack }: WaiterPageProps) {
   const [tables, setTables] = useState<Table[]>([])
@@ -26,6 +38,9 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
   const [isPayingOrderId, setIsPayingOrderId] = useState<number | null>(null)
+  const [addonTargetOrder, setAddonTargetOrder] = useState<Order | null>(null)
+  const [addonCart, setAddonCart] = useState<CartItem[]>([])
+  const [isSubmittingAddon, setIsSubmittingAddon] = useState(false)
 
   const fetchInitialData = async () => {
     setLoading(true)
@@ -54,7 +69,7 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
         .from('orders')
         .select('*')
         .eq('table_id', tableId)
-        .in('status', ['pending', 'preparing'])
+        .in('status', ['pending', 'preparing', 'ready'])
         .order('order_date', { ascending: false })
 
       if (orderError) throw new Error(orderError.message)
@@ -117,6 +132,100 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
     [cart, products]
   )
 
+  const addonCartTotal = useMemo(
+    () =>
+      addonCart.reduce((sum, item) => {
+        const product = products.find((p) => p.product_id === item.productId)
+        return sum + (product?.price || 0) * item.quantity
+      }, 0),
+    [addonCart, products]
+  )
+
+  const addAddonCartItem = (productId: number) => {
+    setAddonCart((prev) => {
+      const existing = prev.find((item) => item.productId === productId)
+      if (existing) {
+        return prev.map((item) => (item.productId === productId ? { ...item, quantity: item.quantity + 1 } : item))
+      }
+      return [...prev, { productId, quantity: 1 }]
+    })
+  }
+
+  const decreaseAddonCartItem = (productId: number) => {
+    setAddonCart((prev) =>
+      prev
+        .map((item) => (item.productId === productId ? { ...item, quantity: item.quantity - 1 } : item))
+        .filter((item) => item.quantity > 0)
+    )
+  }
+
+  const closeAddonDialog = () => {
+    setAddonTargetOrder(null)
+    setAddonCart([])
+  }
+
+  const submitAddonToOrder = async () => {
+    if (!addonTargetOrder || !selectedTable || addonCart.length === 0) return
+
+    setIsSubmittingAddon(true)
+    setError(null)
+    try {
+      const orderId = addonTargetOrder.order_id
+
+      const { data: orderRow, error: orderFetchError } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('order_id', orderId)
+        .single()
+
+      if (orderFetchError || !orderRow) {
+        throw new Error(orderFetchError?.message || 'Order could not be loaded')
+      }
+      if (!canAddProductsToOrder(orderRow.status)) {
+        throw new Error('Products can only be added while the order is pending or preparing.')
+      }
+
+      const detailRows = addonCart.map((item) => {
+        const product = products.find((p) => p.product_id === item.productId)
+        return {
+          order_id: orderId,
+          product_id: item.productId,
+          quantity: item.quantity,
+          unit_price: product?.price ?? 0,
+        }
+      })
+
+      const { error: detailError } = await supabase.from('order_detail').insert(detailRows)
+      if (detailError) throw new Error(detailError.message || 'Could not add order lines')
+
+      const { data: allDetails, error: sumError } = await supabase
+        .from('order_detail')
+        .select('quantity, unit_price')
+        .eq('order_id', orderId)
+
+      if (sumError) throw new Error(sumError.message || 'Could not recalculate order total')
+
+      const newTotal = (allDetails ?? []).reduce(
+        (sum, row) => sum + Number(row.unit_price) * Number(row.quantity),
+        0
+      )
+
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ total_amount: newTotal })
+        .eq('order_id', orderId)
+
+      if (updateError) throw new Error(updateError.message || 'Could not update order total')
+
+      closeAddonDialog()
+      await fetchTableOrders(selectedTable.table_id)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not add products to order')
+    } finally {
+      setIsSubmittingAddon(false)
+    }
+  }
+
   const tableTotal = useMemo(() => orders.reduce((sum, order) => sum + Number(order.total_amount), 0), [orders])
 
   const submitOrder = async () => {
@@ -171,10 +280,13 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
     setIsPayingOrderId(order.order_id)
     setError(null)
     try {
+      // 1) Record payment first; 2) then set order to delivered (any prior status: pending / preparing / ready)
+      const paidAt = new Date().toISOString()
       const { error: paymentError } = await supabase.from('payment').insert({
         payment_method: 'cash',
         amount: order.total_amount,
         order_id: order.order_id,
+        payment_date: paidAt,
       })
 
       if (paymentError) throw new Error(paymentError.message || 'Payment record could not be created')
@@ -262,6 +374,11 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
                           <span className="font-medium">Order #{order.order_id}</span>
                           <Badge variant="secondary">₺{Number(order.total_amount).toFixed(2)}</Badge>
                         </div>
+                        <div className="mb-2">
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {order.status}
+                          </Badge>
+                        </div>
                         <div className="space-y-1 text-sm">
                           {orderDetails
                             .filter((detail) => detail.order_id === order.order_id)
@@ -275,6 +392,20 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
                               </div>
                             ))}
                         </div>
+                        {canAddProductsToOrder(order.status) && (
+                          <Button
+                            className="mt-3 w-full"
+                            variant="secondary"
+                            disabled={isPayingOrderId === order.order_id || isSubmittingAddon}
+                            onClick={() => {
+                              setAddonTargetOrder(order)
+                              setAddonCart([])
+                            }}
+                          >
+                            <PackagePlus className="mr-2 size-4" />
+                            Add Product
+                          </Button>
+                        )}
                         <Button
                           className="mt-3 w-full"
                           variant="outline"
@@ -343,6 +474,74 @@ export function WaiterPage({ onBack }: WaiterPageProps) {
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
       </main>
+
+      <Dialog
+        open={addonTargetOrder !== null}
+        onOpenChange={(open) => {
+          if (!open) closeAddonDialog()
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add products to order #{addonTargetOrder?.order_id}</DialogTitle>
+            <DialogDescription>
+              Choose items and quantities. Only orders in pending or preparing status can be edited.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid max-h-[50vh] gap-2 overflow-y-auto sm:grid-cols-2">
+            {products.map((product) => {
+              const quantity = addonCart.find((item) => item.productId === product.product_id)?.quantity ?? 0
+              return (
+                <div key={product.product_id} className="rounded-lg border p-2">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium leading-tight">{product.name}</p>
+                    <span className="shrink-0 text-xs text-muted-foreground">₺{Number(product.price).toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="size-8"
+                      onClick={() => decreaseAddonCartItem(product.product_id)}
+                    >
+                      <Minus className="size-4" />
+                    </Button>
+                    <span className="text-sm font-semibold">{quantity}</span>
+                    <Button size="icon" variant="outline" className="size-8" onClick={() => addAddonCartItem(product.product_id)}>
+                      <Plus className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <span className="font-medium">Lines total</span>
+            <span className="font-bold">₺{addonCartTotal.toFixed(2)}</span>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={closeAddonDialog} disabled={isSubmittingAddon}>
+              Cancel
+            </Button>
+            <Button type="button" disabled={addonCart.length === 0 || isSubmittingAddon} onClick={() => submitAddonToOrder()}>
+              {isSubmittingAddon ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <PackagePlus className="mr-2 size-4" />
+                  Add to order
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

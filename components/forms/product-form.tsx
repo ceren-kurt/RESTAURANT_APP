@@ -10,7 +10,10 @@ import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Field, FieldGroup } from '@/components/ui/field'
 import { Spinner } from '@/components/ui/spinner'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Product, ProductCreate, Category } from '@/lib/types'
+import { PRODUCT_REQUIRES_ACTIVE_CATEGORY_MESSAGE } from '@/lib/app-context'
+import { AlertTriangle } from 'lucide-react'
 
 interface ProductFormProps {
   open: boolean
@@ -40,6 +43,7 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [availabilityWarning, setAvailabilityWarning] = useState('')
 
   useEffect(() => {
     if (product) {
@@ -62,12 +66,14 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
       })
     }
     setError('')
+    setAvailabilityWarning('')
   }, [product, categories, open])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setError('')
+    setAvailabilityWarning('')
     
     try {
       await onSubmit({
@@ -76,7 +82,14 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
       })
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const msg = err instanceof Error ? err.message : 'An error occurred'
+      if (msg === PRODUCT_REQUIRES_ACTIVE_CATEGORY_MESSAGE) {
+        setAvailabilityWarning(msg)
+        setError('')
+      } else {
+        setError(msg)
+        setAvailabilityWarning('')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -174,6 +187,17 @@ export function ProductForm({ open, onOpenChange, product, categories, onSubmit 
             </Field>
           </FieldGroup>
           
+          {availabilityWarning && (
+            <Alert
+              variant="default"
+              className="mt-2 border-amber-500/40 bg-amber-500/10 text-amber-950 dark:border-amber-500/35 dark:bg-amber-950/35 dark:text-amber-50 [&>svg]:text-amber-600 dark:[&>svg]:text-amber-400"
+            >
+              <AlertTriangle aria-hidden />
+              <AlertDescription className="text-amber-900 dark:text-amber-50">
+                {availabilityWarning}
+              </AlertDescription>
+            </Alert>
+          )}
           {error && (
             <p className="text-destructive text-sm mt-2">{error}</p>
           )}

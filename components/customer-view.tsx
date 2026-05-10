@@ -6,19 +6,17 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useApp } from '@/lib/app-context'
-import { ArrowLeft, ShoppingCart, Package, Armchair, Bike, Plus, Minus, Trash2, ClipboardList } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Package, Plus, Minus, Trash2, ClipboardList } from 'lucide-react'
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from '@/components/ui/empty'
 import { Spinner } from '@/components/ui/spinner'
-import type { Order, OrderDetail, Product, Table } from '@/lib/types'
+import type { Order, OrderDetail, Product } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 
 interface CustomerViewProps {
   onBack: () => void
-  selectedTable?: Table | null
-  orderType?: 'dine-in' | 'online'
 }
 
-export function CustomerView({ onBack, selectedTable, orderType = 'online' }: CustomerViewProps) {
+export function CustomerView({ onBack }: CustomerViewProps) {
   const { categories, products, loading, refreshData } = useApp()
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [cart, setCart] = useState<{ productId: number; quantity: number }[]>([])
@@ -188,19 +186,18 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
       const parsedCustomerId = Number(localStorage.getItem('customer_id'))
       const customerId = Number.isFinite(parsedCustomerId) ? parsedCustomerId : null
 
-      if (orderType === 'online' && !customerId) {
+      if (!customerId) {
         throw new Error('customer_id not found for online order')
       }
 
       const totalAmount = getTotalPrice()
-      const orderTypeValue = orderType === 'online' ? 'takeaway' : orderType
       const orderPayload = {
         order_date: new Date().toISOString(),
         total_amount: totalAmount,
         status: 'pending',
-        order_type: orderTypeValue,
-        table_id: orderType === 'dine-in' ? selectedTable?.table_id ?? null : null,
-        customer_id: orderType === 'online' ? customerId : null,
+        order_type: 'takeaway',
+        table_id: null,
+        customer_id: customerId,
       }
 
       const { data: orderData, error: orderErrorResponse } = await supabase
@@ -259,19 +256,11 @@ export function CustomerView({ onBack, selectedTable, orderType = 'online' }: Cu
             </Button>
             <div>
               <h1 className="text-xl font-bold">Menu</h1>
-              {/* Order Type Badge */}
               <div className="flex items-center gap-2 mt-0.5">
-                {orderType === 'dine-in' && selectedTable ? (
-                  <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                    <Armchair className="size-3" />
-                    Table {selectedTable.table_number}
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                    <Bike className="size-3" />
-                    Gel-Al
-                  </Badge>
-                )}
+                <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                  <Package className="size-3" />
+                  Takeaway
+                </Badge>
               </div>
             </div>
           </div>
